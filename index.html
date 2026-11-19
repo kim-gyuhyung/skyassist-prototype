@@ -53,6 +53,8 @@
   .fac-btn{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.4);color:#fff;border-radius:999px;
     padding:5px 14px;font-weight:600;font-size:.875rem;cursor:pointer}
   .fac-btn:hover{background:rgba(255,255,255,.24)}
+  .fac-link{text-align:center;margin:28px 0 0}
+  .fac-link .link{color:var(--muted);font-weight:500;font-size:.9375rem}
   .hdr h1{position:relative;z-index:1;font-size:1.625rem;line-height:1.2;margin:16px 0 4px;letter-spacing:-.01em}
   .hdr h1:focus{outline:none}
   .h1-sub{display:block;font-size:1.0625rem;font-weight:500;color:#dbe8f6;margin-top:4px}
@@ -150,6 +152,8 @@
   .opt:has(input:checked){border-color:var(--primary);background:#f2f7fd}
   .opt input[type=radio]{width:22px;height:22px;accent-color:var(--primary);flex:none;margin:0}
   .opt .opt-label{font-weight:600}
+  .opt.quiz{flex-wrap:nowrap}
+  .opt.quiz .opt-label{flex:1 1 auto;min-width:0}
   .opt-radio{display:flex;gap:12px;align-items:center;cursor:pointer;min-height:44px}
   .timepick{display:inline-flex;align-items:center;gap:6px;margin-left:auto;font-weight:700}
   .timepick select{min-height:44px;min-width:4.4rem;padding:6px 10px;border:1.5px solid #98aac2;border-radius:12px;background:#fff;
@@ -257,13 +261,14 @@
   td input{min-height:38px;min-width:14rem;padding:6px 10px;border-radius:8px}
   .pass-t{color:var(--ok);font-weight:800}
   a.btn{text-decoration:none}
+  .ai-tag{display:inline-flex;gap:6px;align-items:center;font-size:.8125rem;font-weight:700;color:var(--primary-d);background:#e3eefa;border-radius:999px;padding:2px 10px;margin:0 0 8px!important}
+  .ai-tag .ic{width:14px;height:14px}
   .live-status{display:flex;gap:8px;align-items:center;font-weight:700;border-radius:12px;padding:8px 12px;margin:8px 0;background:var(--no-bg);color:var(--no)}
   .live-status.live{background:var(--ok-bg);color:var(--ok)}
   .live-status.warn{background:var(--hold-bg);color:var(--hold)}
   .live-dot{width:10px;height:10px;border-radius:50%;background:currentColor;flex:none}
   .live-status.live .live-dot{animation:pulse 1.6s ease-in-out infinite}
   @keyframes pulse{50%{opacity:.35}}
-  .sync-local{display:inline-block;margin-top:2px;font-size:.8125rem;font-weight:700;color:var(--hold)}
   .fail-t{color:var(--red);font-weight:800}
   .csvbox{width:100%;min-height:120px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.85rem;margin-top:8px}
   @media (min-width:1100px){html{font-size:17px}}
@@ -292,9 +297,9 @@
       <div id="scOut"></div>
     </section>
     <section>
-      <h3>Test log (<span id="logCount">0</span> rows)</h3>
+      <h3>This device's test log (<span id="logCount">0</span> rows)</h3>
       <p id="liveStatus" class="live-status" role="status"></p>
-      <p class="muted">Rows go to the shared test log, so every device running this page adds to one list that updates live. A device that cannot write to the shared log keeps its rows until reload, marked “this device only” — export those as CSV. “Expected behaviour met” is filled in automatically. Type observations in the facilitator note column (saved when you leave the box); the Case Guide check question is shown for each row.</p>
+      <p class="muted">The team copy of every result is the Google Sheet. This table lists only the runs done on this device, as a backup you can export as CSV. “Expected behaviour met” and “Comprehension correct” are filled in automatically.</p>
       <div class="btnrow">
         <button class="btn secondary" type="button" data-fac="csv">Download CSV</button>
         <button class="btn secondary" type="button" data-fac="copy">Copy CSV</button>
@@ -538,6 +543,7 @@ if (typeof module !== "undefined") module.exports = Engine;
     back: svg('<path d="M19 12H5M11 6l-6 6 6 6"/>'),
     staff: svg('<path d="M4 15v-3a8 8 0 0 1 16 0v3"/><path d="M4 15a2 2 0 0 0 2 2h1.5v-5H6a2 2 0 0 0-2 2zM20 15a2 2 0 0 1-2 2h-1.5v-5H18a2 2 0 0 1 2 2z"/><path d="M18 17v.5a3 3 0 0 1-3 3h-2"/>'),
     task: svg('<path d="M9 5h10M9 12h10M9 19h10"/><path d="M4 5l1 1 2-2M4 12l1 1 2-2M4 19l1 1 2-2"/>'),
+    spark: svg('<path d="M12 3v4M12 17v4M3 12h4M17 12h4M6.3 6.3l2.5 2.5M15.2 15.2l2.5 2.5M6.3 17.7l2.5-2.5M15.2 8.8l2.5-2.5"/>'),
     send: svg('<path d="M21.5 2.5 10.5 13.5"/><path d="M21.5 2.5 14.5 21.5l-4-8-8-4z"/>'),
     shield: svg('<path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M8.5 12l2.5 2.5 4.5-5"/>')
   };
@@ -548,7 +554,7 @@ if (typeof module !== "undefined") module.exports = Engine;
   const FORM_FIELDS = {
     tester: "entry.1992168932", case_id: "entry.1309066521", inputs_used: "entry.690248875", inputs_changed: "entry.2138682312",
     case_result: "entry.205053122", action: "entry.1482542985", expected_behaviour_met: "entry.1445638819", time_on_task_s: "entry.174332614",
-    q1_understood_reasons: "entry.2019626490", q2_info_used_clear: "entry.1718237742", q3_next_step_clear: "entry.322662921",
+    comprehension_answer: "entry.1961179799", comprehension_correct: "entry.89460", q2_info_used_clear: "entry.1718237742", q3_next_step_clear: "entry.322662921",
     q4_confusing: "entry.1612261123", q5_improvement: "entry.798663224"
   };
   const formBody = r => {
@@ -570,6 +576,16 @@ if (typeof module !== "undefined") module.exports = Engine;
     Object.entries(FORM_FIELDS).forEach(([k, e]) => q.append(e, String(r[k] ?? "")));
     q.append("submit", "Submit");
     return FORM_URL + "?" + q.toString();
+  };
+
+  // ---------- comprehension check (one multiple-choice question per case; facilitator data, not rule data) ----------
+  const QUIZ = {
+    C01: { q: "Why was XX211 ranked #1?", correct: 0, options: ["It arrives earlier and still fits your needs", "It is the only flight with seats left", "It is already booked for you"] },
+    C02: { q: "Why couldn't you choose either flight?", correct: 1, options: ["Both flights are sold out", "One has too few seats for 3, the other arrives after 20:00", "The rebooking rules weren't checked"] },
+    C03: { q: "Why was XX233 on hold even though it arrives earlier?", correct: 2, options: ["It is sold out", "It arrives too late", "Wheelchair assistance isn't confirmed for it"] },
+    C04: { q: "Do XX241 and XX243 have seats?", correct: 1, options: ["No, they are sold out", "Maybe — it couldn't be confirmed, so staff must check", "Yes, both are confirmed"] },
+    C05: { q: "Why were no alternative flights shown?", correct: 1, options: ["There are no other flights today", "It isn't confirmed that your flight was cancelled", "You hadn't entered your needs yet"] },
+    C06: { q: "Why did the app ask about your arrival time?", correct: 0, options: ["It doesn't guess needs you haven't told it", "All the flights were delayed", "It needed it to pick your seat number"] }
   };
 
   // ---------- helpers ----------
@@ -618,7 +634,6 @@ if (typeof module !== "undefined") module.exports = Engine;
         ${v.hero ? `<div class="hero-plane" aria-hidden="true">${I.plane.replace('class="ic"', 'width="120" height="120"')}</div>` : ""}
         <div class="hdr-top">
           <div class="brand">${I.plane}<span>SkyAssist <span class="brand-sub">(fictional)</span></span></div>
-          <button type="button" class="fac-btn" id="facBtn" aria-haspopup="dialog">Facilitator</button>
         </div>
         ${steps}
         <h1 tabindex="-1">${v.title}</h1>
@@ -635,6 +650,7 @@ if (typeof module !== "undefined") module.exports = Engine;
       title: `Flight disrupted?<span class="h1-sub"><span class="sr-only">— </span>Rebooking assistant (prototype)</span>`,
       sub: "See alternative flights with clear reasons, then send your choice to staff or ask for help.",
       body: `
+        ${S.flash ? `<div class="callout ok" role="status">${I.check}<div><p><strong>${esc(S.flash)}</strong></p></div></div>` : ""}
         <div class="card task">
           <span class="bubble">${I.task}</span>
           <div>
@@ -656,7 +672,8 @@ if (typeof module !== "undefined") module.exports = Engine;
               <span class="pax-meta">Case ${c.id}${S.hideTags ? "" : ` <span class="tag">${c.tag}</span>${PEER_TEST_SET.includes(c.id) ? ' <span class="tag peer">Peer test set</span>' : ""}`}</span>
               <span class="chev">${I.chev}</span>
             </button></li>`).join("")}
-        </ul>`
+        </ul>
+        <p class="fac-link"><button type="button" class="link" id="facBtn" aria-haspopup="dialog">Facilitator tools</button></p>`
     };
   }
 
@@ -739,6 +756,7 @@ if (typeof module !== "undefined") module.exports = Engine;
           <label class="opt"><input type="radio" name="assist" value="wheelchair" ${n.assistance === "wheelchair" ? "checked" : ""}>${I.wheel}<span class="opt-label">Wheelchair assistance</span></label>
         </fieldset>
         <p class="note">${I.shield}<span>We only use needs you tell us. We never guess assistance needs.</span></p>
+        <p class="muted">For this test, keep the details already filled in and only answer what is blank.</p>
         <button type="button" class="btn primary" id="showOpts" data-action="showOptions" ${needsValid() ? "" : "disabled"}>Show options ${I.chev}</button>
         <p><button type="button" class="link" data-action="resetNeeds">Reset to case defaults</button></p>
         ${snap()}${backLink("toNotice", "Back")}`
@@ -772,6 +790,7 @@ if (typeof module !== "undefined") module.exports = Engine;
           <ul class="chips" aria-label="What was checked">${chips}</ul>
         </div>
         <div class="fc-why">
+          <p class="ai-tag">${I.spark}<span>AI-supported explanation (simulated)</span></p>
           <p><strong>Why?</strong> ${esc(f.why)}</p>
           ${f.status === "FEASIBLE" ? `
             <p class="fc-recheck">Staff must recheck seats and rules before booking.</p>
@@ -815,6 +834,7 @@ if (typeof module !== "undefined") module.exports = Engine;
           </ol>
           <p>Must-have needs (seats, deadline) are checked before uncertain information. Data snapshot: ${Engine.SNAPSHOT}. Freshness limit: ${Engine.FRESHNESS_LIMIT_MIN} minutes. Both are classroom assumptions.</p>
           <p><strong>Results come from predefined test rules applied to fictional data, not from a trained AI model.</strong></p>
+          <p><strong>In the real system,</strong> AI would combine the airline's live sources to rank alternative flights, write these plain-language explanations, and flag stale or conflicting data for staff review. Staff would still confirm every rebooking.</p>
         </details>
         ${snap()}${backLink("toNeeds", "Back to your needs")}`,
       footer: `
@@ -873,15 +893,18 @@ if (typeof module !== "undefined") module.exports = Engine;
       <div class="seg">${["Yes", "Partly", "No"].map(v => `<label><input type="radio" name="${name}" value="${v}">${v}</label>`).join("")}</div>
     </fieldset>`;
   function vFeedback() {
+    const qz = QUIZ[S.caseId];
     return {
       title: "Quick feedback", sub: "About 30 seconds. Your answers help us improve the prototype.",
       body: `
-        ${seg("q1", "1. Did you understand why the options were ranked or held?")}
+        <fieldset class="fb-q"><legend>1. Quick check: ${esc(qz.q)}</legend>
+          ${qz.options.map((o, i) => `<label class="opt quiz"><input type="radio" name="quiz" value="${i}"><span class="opt-label">${esc(o)}</span></label>`).join("")}
+        </fieldset>
         ${seg("q2", "2. Could you tell what information the assistant used?")}
         ${seg("q3", "3. Was it clear what you should do next?")}
         <div class="field fb-q"><label for="q4">4. Was anything confusing?</label><input type="text" id="q4" autocomplete="off"></div>
         <div class="field"><label for="q5">5. One improvement idea</label><input type="text" id="q5" autocomplete="off"></div>
-        <p class="note">${I.info}<span>Your answers are saved to the team’s test log. Use a tester number, not your name.</span></p>
+        <p class="note">${I.info}<span>Your answers are sent to the team’s test sheet when you save. Use a tester number, not your name.</span></p>
         <button type="button" class="btn primary" data-action="saveFeedback">Save and finish</button>
         <p style="text-align:center"><button type="button" class="link" data-action="skipFeedback">Skip feedback</button></p>`
     };
@@ -894,20 +917,14 @@ if (typeof module !== "undefined") module.exports = Engine;
       title: "Sending your results", sub: "This takes a moment.",
       body: `<div class="callout info">${I.send}<div><p><strong>Sending your answers to the test team…</strong></p></div></div>`
     };
-    if (S.auto === "sent") return {
-      title: "Results sent", sub: "Thank you for testing.",
-      body: `
-        <div class="callout ok">${I.check}<div><p><strong>Your answers were sent to the test team.</strong></p><p>You can hand the device back or start again.</p></div></div>
-        <button type="button" class="btn primary" data-action="finish">Finish</button>`
-    };
     return {
       title: "Send your results", sub: "One tap shares your answers with the test team.",
       body: `
         <div class="card task">
           <span class="bubble">${I.send}</span>
           <div>
-            <h2>Last step: tap “Send results”</h2>
-            <p>A Google page opens in a new tab and shows “Your response has been recorded”. Then come back here and tap Finish.</p>
+            <h2>Your results couldn’t be sent automatically</h2>
+            <p>Tap “Send results”. A Google page opens in a new tab and shows “Your response has been recorded”. Close that tab, come back here and tap Finish.</p>
           </div>
         </div>
         <a class="btn primary" href="${esc(formLink(r))}" target="_blank" rel="noopener noreferrer" data-action="sendForm">${I.send} Send results to the team</a>
@@ -938,18 +955,20 @@ if (typeof module !== "undefined") module.exports = Engine;
     const flight = o.type === "chose" ? S.res.flights.find(x => x.id === o.flightId).flight : "";
     const d = new Date(), p = x => String(x).padStart(2, "0");
     const row = {
-      id: newId(), createdAt: d.toISOString(), sync: LIVE.db ? "pending" : "local",
+      id: newId(),
       timestamp: `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`,
       tester: S.tester, case_id: c.id, inputs_used: inputsUsed(n), inputs_changed: inputsChanged(n, c.needs),
       case_result: S.res.result, action: o.type === "chose" ? `chose ${flight}` : "asked for help",
-      expected_behaviour_met: expectedMet(S.res, o), time_on_task_s: S.tta ?? "",
-      q1_understood_reasons: a.q1, q2_info_used_clear: a.q2, q3_next_step_clear: a.q3, q4_confusing: a.q4, q5_improvement: a.q5,
+      expected_behaviour_met: expectedMet(S.res, o),
+      comprehension_answer: a.quiz === "" ? "" : QUIZ[c.id].options[Number(a.quiz)],
+      comprehension_correct: a.quiz === "" ? "" : (Number(a.quiz) === QUIZ[c.id].correct ? "Yes" : "No"),
+      time_on_task_s: S.tta ?? "",
+      q2_info_used_clear: a.q2, q3_next_step_clear: a.q3, q4_confusing: a.q4, q5_improvement: a.q5,
       case_guide_check: CASE_GUIDE[c.id], sent_to_form: "no", facilitator_note: ""
     };
     S.log.push(row);
     S.lastRow = row;
     renderLog();
-    pushShared(row);
   }
 
   // ---------- events ----------
@@ -969,6 +988,7 @@ if (typeof module !== "undefined") module.exports = Engine;
     if (!b) return;
     const a = b.dataset.action;
     if (a === "pick") {
+      S.flash = "";
       S.caseId = b.dataset.id; resetNeeds(); S.res = null; S.chosen = null; S.outcome = null;
       S.t0 = performance.now(); S.tta = null; go(1);
     } else if (a === "home") go(0);
@@ -996,30 +1016,29 @@ if (typeof module !== "undefined") module.exports = Engine;
     } else if (a === "toFeedback") go(5);
     else if (a === "saveFeedback" || a === "skipFeedback") {
       const val = sel => ((app.querySelector(sel) || {}).value || "").trim();
-      addLogRow(a === "skipFeedback" ? { q1: "", q2: "", q3: "", q4: "", q5: "" } : {
-        q1: val('input[name="q1"]:checked'), q2: val('input[name="q2"]:checked'), q3: val('input[name="q3"]:checked'),
+      addLogRow(a === "skipFeedback" ? { quiz: "", q2: "", q3: "", q4: "", q5: "" } : {
+        quiz: val('input[name="quiz"]:checked'), q2: val('input[name="q2"]:checked'), q3: val('input[name="q3"]:checked'),
         q4: val("#q4"), q5: val("#q5")
       });
       S.sent = false; S.finishArmed = false; S.auto = "sending"; go(6);
       const row = S.lastRow;
       autoSend(row).then(() => {
-        S.auto = "sent"; S.sent = true; row.sent_to_form = "yes (auto)";
-        if (LIVE.db) LIVE.db.collection("testlog").doc(row.id).update({ sent_to_form: "yes (auto)" }).catch(() => {});
-        renderLog();
-      }).catch(() => { S.auto = "manual"; }).then(() => { if (S.screen === 6) go(6); });
+        row.sent_to_form = "yes (auto)"; renderLog();
+        S.auto = null; S.flash = "Results sent to the team. Thank you for testing!";
+        if (S.screen === 6) go(0);
+      }).catch(() => { S.auto = "manual"; if (S.screen === 6) go(6); });
     } else if (a === "sendForm") {
       // Let the link open; only record that it was tapped.
       S.sent = true; S.finishArmed = false;
       const r = S.lastRow;
       if (r && r.sent_to_form !== "yes") {
         r.sent_to_form = "yes";
-        if (LIVE.db) LIVE.db.collection("testlog").doc(r.id).update({ sent_to_form: "yes" }).catch(() => {});
         renderLog();
       }
       setTimeout(render, 400);
     } else if (a === "finish") {
       if (!S.sent && !S.finishArmed) { S.finishArmed = true; const h = app.querySelector("#finishHint"); if (h) h.hidden = false; return; }
-      S.sent = false; S.finishArmed = false; go(0);
+      S.sent = false; S.finishArmed = false; S.auto = null; go(0);
     }
   });
 
@@ -1041,71 +1060,21 @@ if (typeof module !== "undefined") module.exports = Engine;
   app.addEventListener("input", onField);
   app.addEventListener("change", onField);
 
-  // ---------- shared test log (artifact db: collection "testlog", one document per test run) ----------
-  const LIVE = { db: null, state: "off", rows: null, timer: null, writeFailed: false };
+  // ---------- local test log (this device only; the team copy is the Google Sheet) ----------
   const newId = () => "r" + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
-  const sharedBody = r => { const b = { createdAt: r.createdAt }; COLS.forEach(k => { b[k] = r[k] ?? ""; }); return b; };
-  const pause = ms => new Promise(res => setTimeout(res, ms));
-  async function pushShared(row) {
-    if (!LIVE.db) return;
-    const ref = LIVE.db.collection("testlog").doc(row.id);
-    try { await ref.set(sharedBody(row)); row.sync = "shared"; }
-    catch (e) {
-      if (e && e.code === "unavailable") {
-        await pause(700 + Math.random() * 900);
-        try { await ref.set(sharedBody(row)); row.sync = "shared"; } catch (e2) { row.sync = "local"; LIVE.writeFailed = true; }
-      } else { row.sync = "local"; LIVE.writeFailed = true; }
-    }
-    renderLog();
-  }
-  const noteQueue = {};
-  function saveNote(id, value) {
-    const shared = LIVE.rows && LIVE.rows.some(r => r._id === id);
-    const local = S.log.find(r => r.id === id); if (local) local.facilitator_note = value;
-    if (!shared || !LIVE.db) return;
-    noteQueue[id] = (noteQueue[id] || Promise.resolve()).then(() =>
-      LIVE.db.collection("testlog").doc(id).update({ facilitator_note: value })
-        .then(() => { facMsg.textContent = "Note saved to the shared log."; })
-        .catch(() => { facMsg.textContent = "That note could not be saved to the shared log. It stays on this device; export as CSV."; }));
-  }
-  function allRows() {
-    if (!LIVE.rows) return S.log;
-    const ids = new Set(LIVE.rows.map(r => r._id));
-    return [...LIVE.rows.map(r => Object.assign({}, r, { id: r._id, sync: "shared" })), ...S.log.filter(r => !ids.has(r.id))];
-  }
+  function saveNote(id, value) { const r = S.log.find(x => x.id === id); if (r) r.facilitator_note = value; }
+  const allRows = () => S.log;
   function renderLiveStatus() {
     const el = document.getElementById("liveStatus"); if (!el) return;
-    const n = LIVE.rows ? LIVE.rows.length : 0, localOnly = allRows().filter(r => r.sync === "local").length;
-    const msg = {
-      off: ["", "Shared log is not available on this page. Results reach the team Google Sheet; rows listed here stay on this device until reload — export them as CSV if needed."],
-      connecting: ["warn", "Connecting to the shared test log…"],
-      slow: ["warn", "Can't reach the shared test log yet. New rows stay on this device and appear here."],
-      live: ["live", `Live shared log · ${n} ${n === 1 ? "row" : "rows"} from all devices`],
-      error: ["warn", "The shared test log stopped responding. Export your rows as CSV, then reload the page."]
-    }[LIVE.state];
-    el.className = "live-status " + msg[0];
-    el.innerHTML = `<span class="live-dot" aria-hidden="true"></span><span>${msg[1]}${localOnly ? ` · ${localOnly} on this device only` : ""}</span>`;
-  }
-  function startShared() {
-    if (!(window.claude && typeof window.claude.use === "function")) return;
-    LIVE.state = "connecting";
-    window.claude.use("db").then(db => {
-      if (!db) { LIVE.state = "off"; return renderLog(); }
-      LIVE.db = db;
-      LIVE.timer = setTimeout(() => { if (LIVE.state === "connecting") { LIVE.state = "slow"; renderLog(); } }, 10000);
-      db.collection("testlog").orderBy("createdAt", "asc").onSnapshot(snap => {
-        LIVE.rows = snap.docs.map(d => Object.assign({ _id: d.id }, d.data()));
-        if (!snap.metadata.fromCache) { clearTimeout(LIVE.timer); LIVE.state = "live"; }
-        renderLog();
-      }, () => { clearTimeout(LIVE.timer); LIVE.state = "error"; renderLog(); });
-    }).catch(() => { LIVE.state = "off"; renderLog(); });
+    el.className = "live-status";
+    el.innerHTML = `<span class="live-dot" aria-hidden="true"></span><span>Results go to the team Google Sheet when feedback is saved. This list is a backup of this device's runs and clears on reload.</span>`;
   }
 
   // ---------- facilitator panel ----------
   const fac = document.getElementById("fac");
   const facMsg = document.getElementById("facMsg");
-  const COLS = ["timestamp", "tester", "case_id", "inputs_used", "inputs_changed", "case_result", "action", "expected_behaviour_met", "time_on_task_s",
-    "q1_understood_reasons", "q2_info_used_clear", "q3_next_step_clear", "q4_confusing", "q5_improvement", "case_guide_check", "sent_to_form", "facilitator_note"];
+  const COLS = ["timestamp", "tester", "case_id", "inputs_used", "inputs_changed", "case_result", "action", "expected_behaviour_met",
+    "comprehension_answer", "comprehension_correct", "time_on_task_s", "q2_info_used_clear", "q3_next_step_clear", "q4_confusing", "q5_improvement", "case_guide_check", "sent_to_form", "facilitator_note"];
   const toCSV = () => [COLS.join(","), ...allRows().map(r => COLS.map(k => `"${String(r[k] ?? "").replace(/"/g, '""')}"`).join(","))].join("\r\n");
 
   function renderLog() {
@@ -1118,9 +1087,7 @@ if (typeof module !== "undefined") module.exports = Engine;
       ? `<table><thead><tr>${COLS.map(c => `<th scope="col">${c}</th>`).join("")}</tr></thead><tbody>${rows.map((r, i) => `<tr>${COLS.map(k =>
           k === "facilitator_note"
             ? `<td><input type="text" data-note="${esc(r.id)}" value="${esc(r[k])}" aria-label="Facilitator note for row ${i + 1}"></td>`
-            : k === "timestamp" && r.sync === "local"
-              ? `<td>${esc(r[k])}<br><span class="sync-local">this device only</span></td>`
-              : `<td>${esc(r[k])}</td>`).join("")}</tr>`).join("")}</tbody></table>`
+            : `<td>${esc(r[k])}</td>`).join("")}</tr>`).join("")}</tbody></table>`
       : `<p class="muted" style="padding:8px 10px;margin:0">No test runs logged yet. A row is added when a tester finishes or skips the feedback screen.</p>`;
   }
   function runSelfCheck() {
@@ -1139,7 +1106,7 @@ if (typeof module !== "undefined") module.exports = Engine;
     const ta = document.getElementById("csvText"); ta.focus(); ta.select();
   }
   function openFac() { fac.hidden = false; renderLog(); fac.querySelector('[data-fac="close"]').focus(); }
-  function closeFac() { fac.hidden = true; const b = document.getElementById("facBtn"); if (b) b.focus(); }
+  function closeFac() { fac.hidden = true; const b = document.getElementById("facBtn"); if (b) b.focus(); else { const h = app.querySelector("h1"); if (h) h.focus(); } }
 
   // Hosted viewer: files are offered through the platform's downloads capability; opened as a local file, a normal download is used.
   let dl = null;
@@ -1183,23 +1150,17 @@ if (typeof module !== "undefined") module.exports = Engine;
       try { await navigator.clipboard.writeText(csv); facMsg.textContent = `Copied ${allRows().length} rows as CSV. Paste into a spreadsheet.`; }
       catch (err) { facMsg.textContent = "Clipboard is blocked here. Copy the text below instead."; showFallback(csv); }
     } else if (a === "clear") {
-      const total = allRows().length;
-      if (!S.clearArmed) { S.clearArmed = true; clearBtn.textContent = LIVE.rows ? `Click again to delete all ${total} rows for everyone` : "Click again to clear all rows"; }
+      if (!S.clearArmed) { S.clearArmed = true; clearBtn.textContent = "Click again to clear this device's list"; }
       else {
         S.clearArmed = false; clearBtn.textContent = "Clear log";
-        let failed = 0;
-        if (LIVE.db && LIVE.rows) {
-          for (const r of LIVE.rows.slice()) { try { await LIVE.db.collection("testlog").doc(r._id).delete(); } catch (err) { failed++; } }
-        }
         S.log = []; renderLog(); document.getElementById("csvFallback").innerHTML = "";
-        facMsg.textContent = failed ? `Cleared, but ${failed} shared rows could not be deleted from this device.` : "Log cleared.";
+        facMsg.textContent = "This device's list was cleared. The Google Sheet is not affected.";
       }
     }
   });
   document.addEventListener("keydown", e => { if (e.key === "Escape" && !fac.hidden) closeFac(); });
 
   render();
-  startShared();
 })();
 </script>
 </body>
