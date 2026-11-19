@@ -1,0 +1,1206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SkyAssist (fictional) · Rebooking assistant prototype</title>
+<style>
+  :root{
+    --ink:#0f1f33; --muted:#4c5a6e; --bg:#eef3f9; --surface:#ffffff; --line:#dbe3ee;
+    --primary:#0b5cad; --primary-d:#084886; --navy:#0b2a4a;
+    --ok:#146c43; --ok-bg:#e2f4ea; --ok-line:#9fd3b6;
+    --hold:#7a4a00; --hold-bg:#fff4dd; --hold-line:#e7b252;
+    --no:#475467; --no-bg:#eef1f5; --no-line:#c3cad5;
+    --red:#a4262c; --red-bg:#fde8e9;
+    --shadow:0 1px 2px rgba(15,31,51,.06),0 6px 18px rgba(15,31,51,.07);
+    --shadow-lg:0 2px 4px rgba(15,31,51,.06),0 14px 32px rgba(15,31,51,.10);
+  }
+  *{box-sizing:border-box}
+  html{font-size:16px}
+  body{margin:0;color:var(--ink);line-height:1.5;font-size:1rem;
+    font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    background:linear-gradient(180deg,#c9dcf1 0%,#e4eef9 45%,#f4f8fc 100%) fixed;
+    -webkit-font-smoothing:antialiased}
+  button,input,textarea{font:inherit;color:inherit}
+  :focus-visible{outline:3px solid #f2a900;outline-offset:2px}
+  .sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+  [hidden]{display:none!important}
+  .ic{width:1.15em;height:1.15em;flex:none;vertical-align:-.2em}
+  .tnum{font-variant-numeric:tabular-nums}
+
+  /* device frame */
+  .device{max-width:430px;margin:0 auto;background:var(--bg);min-height:100vh;position:relative}
+  @media (min-width:600px){
+    .device{margin:28px auto;min-height:calc(100vh - 56px);border-radius:34px;overflow:clip;
+      box-shadow:0 0 0 10px #fff,0 0 0 11px #c6d4e6,0 40px 70px -24px rgba(11,42,74,.45)}
+  }
+  .sim-banner{position:sticky;top:0;z-index:40;background:#0a1f36;color:#fff;text-align:center;
+    font-size:.8125rem;font-weight:700;letter-spacing:.04em;padding:6px 12px}
+
+  /* header */
+  .hdr{position:relative;overflow:hidden;color:#fff;padding:14px 20px 34px;
+    background:linear-gradient(155deg,#0b2a4a 0%,#114a85 55%,#1a6dbd 100%)}
+  .hdr::before,.hdr::after{content:"";position:absolute;border-radius:50%;background:rgba(255,255,255,.07);pointer-events:none}
+  .hdr::before{width:220px;height:220px;right:-70px;top:-90px}
+  .hdr::after{width:140px;height:140px;right:60px;bottom:-90px}
+  .hdr.hero{padding-bottom:52px}
+  .hero-plane{position:absolute;right:-6px;top:44px;width:110px;height:110px;color:rgba(255,255,255,.10);transform:rotate(-12deg)}
+  .hdr.hero h1,.hdr.hero .hdr-sub{padding-right:64px}
+  .hdr-top{display:flex;justify-content:space-between;align-items:center;position:relative;z-index:1}
+  .brand{display:flex;gap:8px;align-items:center;font-weight:800;letter-spacing:.01em}
+  .brand .ic{width:22px;height:22px}
+  .brand-sub{font-weight:500;color:#cfe0f4}
+  .fac-btn{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.4);color:#fff;border-radius:999px;
+    padding:5px 14px;font-weight:600;font-size:.875rem;cursor:pointer}
+  .fac-btn:hover{background:rgba(255,255,255,.24)}
+  .hdr h1{position:relative;z-index:1;font-size:1.625rem;line-height:1.2;margin:16px 0 4px;letter-spacing:-.01em}
+  .hdr h1:focus{outline:none}
+  .h1-sub{display:block;font-size:1.0625rem;font-weight:500;color:#dbe8f6;margin-top:4px}
+  .hdr-sub{position:relative;z-index:1;margin:0;color:#dbe8f6}
+  .steps{position:relative;z-index:1;display:grid;grid-template-columns:repeat(4,1fr);gap:6px;list-style:none;padding:0;margin:16px 0 0}
+  .steps li{font-size:.8125rem;color:#c3d6ec}
+  .steps li::before{content:"";display:block;height:4px;border-radius:2px;background:rgba(255,255,255,.28);margin-bottom:6px}
+  .steps li.done::before,.steps li.cur::before{background:#fff}
+  .steps li.cur{color:#fff;font-weight:700}
+
+  /* content */
+  .content{position:relative;margin-top:-20px;background:var(--bg);border-radius:22px 22px 0 0;padding:20px 16px 32px;animation:rise .28s ease-out}
+  @keyframes rise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+  @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+  h2{font-size:1.125rem;margin:22px 0 10px}
+  h3{font-size:1.0625rem;margin:0}
+  p{margin:0 0 12px}
+  .muted{color:var(--muted)}
+  .card{background:var(--surface);border-radius:18px;box-shadow:var(--shadow);padding:16px;margin:12px 0}
+  .snap{display:flex;gap:8px;align-items:flex-start;color:var(--muted);margin:22px 0 4px;font-size:.9375rem}
+
+  /* buttons */
+  .btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:52px;border-radius:999px;
+    border:2px solid transparent;font-weight:700;font-size:1.0625rem;cursor:pointer;margin:10px 0;padding:10px 20px;
+    transition:background .15s,box-shadow .15s,transform .1s}
+  .btn:active{transform:scale(.985)}
+  .btn.primary{background:var(--primary);color:#fff;box-shadow:0 8px 16px -8px rgba(11,92,173,.7)}
+  .btn.primary:hover{background:var(--primary-d)}
+  .btn.secondary{background:#fff;color:var(--primary);border-color:#b7cbe5}
+  .btn.secondary:hover{background:#f1f6fc;border-color:var(--primary)}
+  .btn.selected{background:var(--ok);color:#fff}
+  .btn:disabled{background:#d5dce6;border-color:#d5dce6;color:#3e4a5c;box-shadow:none;cursor:not-allowed;transform:none}
+  .link{background:none;border:0;color:var(--primary);font-weight:600;text-decoration:underline;text-underline-offset:3px;
+    padding:8px 0;cursor:pointer;display:inline-flex;gap:6px;align-items:center}
+
+  /* start screen */
+  .task{display:flex;gap:12px;align-items:flex-start}
+  .bubble{flex:none;width:40px;height:40px;border-radius:12px;display:grid;place-items:center;background:#e3eefa;color:var(--primary)}
+  .bubble .ic{width:22px;height:22px}
+  .task h2{margin:0 0 4px;font-size:1.0625rem}
+  .task p{margin:0}
+  .field{margin:14px 0}
+  .field label{display:block;font-weight:600;margin-bottom:6px}
+  .hint{font-weight:400;color:var(--muted)}
+  input[type=text],input[type=number],textarea{width:100%;min-height:48px;padding:10px 14px;border:1.5px solid #98aac2;
+    border-radius:12px;background:#fff}
+  input:focus-visible,textarea:focus-visible{outline:3px solid #f2a900;outline-offset:1px;border-color:var(--primary)}
+  .toggle{display:flex;gap:12px;align-items:center;cursor:pointer;background:#fff;border-radius:14px;padding:12px 14px;box-shadow:var(--shadow)}
+  .toggle input{width:22px;height:22px;accent-color:var(--primary);flex:none}
+  .pax-list{list-style:none;margin:0;padding:0}
+  .pax{width:100%;display:grid;grid-template-columns:auto 1fr auto;grid-template-areas:"av per chev" "av meta chev";gap:2px 14px;align-items:center;text-align:left;background:#fff;
+    border:2px solid transparent;border-radius:18px;padding:14px;margin:10px 0;cursor:pointer;box-shadow:var(--shadow);transition:border-color .15s,box-shadow .15s}
+  .pax:hover{border-color:#9ec0e6;box-shadow:var(--shadow-lg)}
+  .avatar{grid-area:av;width:46px;height:46px;border-radius:50%;display:grid;place-items:center;background:#e3eefa;color:var(--primary)}
+  .avatar .ic{width:24px;height:24px}
+  .pax-persona{grid-area:per;font-weight:600}
+  .pax-meta{grid-area:meta;display:flex;flex-wrap:wrap;gap:6px;align-items:center;color:var(--muted);font-size:.9375rem}
+  .pax .chev{grid-area:chev;color:#8796ab}
+  .tag{font-size:.75rem;font-weight:800;letter-spacing:.05em;border-radius:6px;padding:1px 7px;background:var(--no-bg);color:var(--no);border:1px solid var(--no-line)}
+  .tag.peer{background:#e3eefa;color:var(--primary-d);border-color:#b7cbe5;letter-spacing:0}
+
+  /* disruption notice */
+  .board-label{color:var(--muted);font-size:.9375rem}
+  .board-route{display:flex;align-items:center;gap:10px;margin:6px 0 2px}
+  .apt{font-size:1.875rem;font-weight:800;letter-spacing:.02em}
+  .route-line{flex:1;display:flex;align-items:center;gap:6px;color:#7d8ea6}
+  .route-line span{flex:1;border-top:2px dashed #c3cfde}
+  .route-line .ic{width:22px;height:22px;color:var(--primary)}
+  .srcs{list-style:none;margin:14px 0 0;padding:0}
+  .srcs li{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 0;border-top:1px solid var(--line)}
+  .src-name{font-weight:600;display:block}
+  .src-at{color:var(--muted);font-size:.9375rem}
+  .pill{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:3px 12px;font-weight:800;font-size:.875rem;letter-spacing:.03em;white-space:nowrap}
+  .pill.cancelled{background:var(--red-bg);color:var(--red)}
+  .pill.delayed{background:var(--hold-bg);color:var(--hold)}
+
+  .callout{display:flex;gap:12px;align-items:flex-start;border-radius:16px;padding:14px;margin:12px 0}
+  .callout .ic{width:22px;height:22px;margin-top:1px}
+  .callout p{margin:0}
+  .callout p+p{margin-top:6px;font-weight:500}
+  .callout strong{display:block}
+  .callout.ok{background:var(--ok-bg);color:var(--ok)}
+  .callout.hold{background:var(--hold-bg);color:var(--hold);border:1.5px solid var(--hold-line)}
+  .callout.no{background:var(--no-bg);color:var(--no);border:1.5px solid var(--no-line)}
+  .callout.info{background:#e3eefa;color:var(--primary-d)}
+  .callout.red{background:var(--red-bg);color:var(--red)}
+
+  /* needs */
+  fieldset{border:0;padding:0;margin:20px 0 0;min-width:0}
+  legend{font-weight:700;font-size:1.0625rem;padding:0;margin-bottom:6px}
+  .ask{display:flex;gap:8px;align-items:center;background:var(--hold-bg);color:var(--hold);border-radius:12px;padding:8px 12px;font-weight:600;margin:6px 0 4px}
+  .opt{display:flex;flex-wrap:wrap;gap:10px 12px;align-items:center;background:#fff;border:2px solid var(--line);border-radius:16px;padding:12px 14px;
+    margin:8px 0;min-height:58px;cursor:pointer;transition:border-color .15s,background .15s}
+  .opt:hover{border-color:#9ec0e6}
+  .opt:has(input:checked){border-color:var(--primary);background:#f2f7fd}
+  .opt input[type=radio]{width:22px;height:22px;accent-color:var(--primary);flex:none;margin:0}
+  .opt .opt-label{font-weight:600}
+  .opt-radio{display:flex;gap:12px;align-items:center;cursor:pointer;min-height:44px}
+  .timepick{display:inline-flex;align-items:center;gap:6px;margin-left:auto;font-weight:700}
+  .timepick select{min-height:44px;min-width:4.4rem;padding:6px 10px;border:1.5px solid #98aac2;border-radius:12px;background:#fff;
+    font:inherit;font-weight:700;font-variant-numeric:tabular-nums;color:var(--ink);cursor:pointer}
+  .timepick select:focus-visible{outline:3px solid #f2a900;outline-offset:1px;border-color:var(--primary)}
+  .qty{display:flex;align-items:center;gap:10px;background:#fff;border-radius:16px;padding:8px 10px;box-shadow:var(--shadow);width:max-content}
+  .qty button{width:44px;height:44px;border-radius:50%;border:2px solid #b7cbe5;background:#fff;color:var(--primary);font-size:1.4rem;font-weight:700;cursor:pointer;line-height:1}
+  .qty button:hover{border-color:var(--primary)}
+  .qty input{width:4.2rem;text-align:center;font-weight:700;font-size:1.125rem;border:0;min-height:44px}
+  .note{display:flex;gap:10px;align-items:flex-start;background:#e3eefa;color:var(--primary-d);border-radius:14px;padding:12px 14px;margin:18px 0 6px}
+
+  /* options */
+  .needs-sum{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:0 0 4px}
+  .chip{display:inline-flex;align-items:center;gap:6px;background:#fff;border-radius:999px;padding:4px 12px;box-shadow:var(--shadow);font-size:.9375rem}
+  .fcard{position:relative;background:#fff;border-radius:20px;box-shadow:var(--shadow);margin:14px 0;border:2px solid transparent;transition:box-shadow .15s,border-color .15s}
+  .fcard.rank1{border-color:var(--ok-line)}
+  .fcard.s-HOLD{border-color:var(--hold-line);border-style:dashed}
+  .fcard.s-EXCLUDED{background:#fbfcfd;box-shadow:none;border-color:var(--line)}
+  .fcard.chosen{border-color:var(--ok);box-shadow:0 0 0 3px rgba(20,108,67,.25),var(--shadow-lg)}
+  .fc-main{padding:14px 16px 12px}
+  .fc-top{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:6px 10px}
+  .fc-num{font-weight:800;letter-spacing:.03em;color:var(--muted)}
+  .badge{display:inline-flex;gap:6px;align-items:center;border-radius:999px;padding:3px 12px;font-weight:800;font-size:.9375rem}
+  .b-rank1{background:var(--ok);color:#fff}
+  .b-rank{background:var(--ok-bg);color:var(--ok)}
+  .b-hold{background:var(--hold-bg);color:var(--hold);border:1px solid var(--hold-line)}
+  .b-excl{background:var(--no-bg);color:var(--no)}
+  .fc-route{display:flex;align-items:center;gap:10px;margin:10px 0 4px}
+  .fc-time .t{display:block;font-size:1.75rem;font-weight:800;line-height:1.1;font-variant-numeric:tabular-nums}
+  .fc-time .ap{display:block;color:var(--muted);font-weight:600;font-size:.9375rem}
+  .fc-time.r{text-align:right}
+  .s-EXCLUDED .fc-time .t{color:#3e4a5c}
+  .chips{list-style:none;padding:0;margin:10px 0 0;display:flex;flex-wrap:wrap;gap:6px}
+  .chips li{display:inline-flex;align-items:center;gap:5px;border-radius:999px;padding:3px 10px;font-size:.9375rem;font-weight:600}
+  .chips li .ic{width:16px;height:16px}
+  .c-ok{background:var(--ok-bg);color:var(--ok)}
+  .c-fail{background:var(--red-bg);color:var(--red)}
+  .c-unk{background:var(--hold-bg);color:var(--hold)}
+  .c-na{background:var(--no-bg);color:var(--no)}
+  .fc-why{position:relative;border-top:2px dashed #d3dce8;padding:12px 16px 14px}
+  .fc-why::before,.fc-why::after{content:"";position:absolute;top:-11px;width:20px;height:20px;border-radius:50%;background:var(--bg)}
+  .fc-why::before{left:-12px} .fc-why::after{right:-12px}
+  .s-EXCLUDED .fc-why::before,.s-EXCLUDED .fc-why::after{background:var(--bg)}
+  .fc-why p{margin:0}
+  .fc-recheck{color:var(--muted);margin-top:6px!important;font-size:.9375rem}
+  .fc-hold{display:flex;gap:8px;align-items:center;font-weight:700;color:var(--hold);margin-top:8px!important}
+  .fc-maybe{color:var(--hold);margin-top:4px!important}
+  .fc-why .btn{margin:12px 0 0}
+  details.excluded{margin:18px 0}
+  details>summary{cursor:pointer;font-weight:700;min-height:48px;display:flex;align-items:center;gap:8px;list-style:none}
+  details>summary::-webkit-details-marker{display:none}
+  details>summary .chev-d{transition:transform .2s;color:var(--muted)}
+  details[open]>summary .chev-d{transform:rotate(90deg)}
+  details.excluded>summary{background:#fff;border-radius:14px;padding:6px 14px;box-shadow:var(--shadow)}
+  details.how{background:#fff;border-radius:18px;padding:4px 16px;margin:18px 0;box-shadow:var(--shadow)}
+  details.how ol{padding-left:1.3rem;margin:4px 0 12px}
+  details.how li{margin:5px 0}
+  .choicebar{position:sticky;bottom:0;z-index:20;background:rgba(255,255,255,.97);backdrop-filter:blur(6px);
+    border-radius:22px 22px 0 0;box-shadow:0 -8px 24px rgba(15,31,51,.12);padding:12px 16px 14px}
+  .choicebar .btn{margin:8px 0 0}
+  .choice-flight{display:flex;justify-content:space-between;gap:10px;font-weight:700}
+  .choicebar .muted{margin:0;font-size:.9375rem}
+
+  /* desk pass */
+  .notbook{display:inline-flex;gap:8px;align-items:center;background:var(--red-bg);color:var(--red);border-radius:999px;padding:6px 14px;font-weight:800}
+  .pass{background:#fff;border-radius:22px;box-shadow:var(--shadow-lg);margin:18px 0;overflow:hidden}
+  .pass-head{display:flex;align-items:center;gap:8px;background:linear-gradient(135deg,#0b2a4a,#1a6dbd);color:#fff;padding:12px 16px;font-weight:800}
+  .pass-head .case{margin-left:auto;background:rgba(255,255,255,.18);border-radius:999px;padding:2px 10px;font-size:.875rem}
+  .pass-body{padding:14px 16px}
+  .pass-body h2{margin:0 0 8px;font-size:1rem;color:var(--muted);font-weight:600}
+  .pass dl{display:grid;grid-template-columns:auto 1fr;gap:6px 16px;margin:0}
+  .pass dt{color:var(--muted)}
+  .pass dd{margin:0;font-weight:700}
+  .pass-foot{position:relative;display:flex;gap:8px;align-items:flex-start;border-top:2px dashed #d3dce8;padding:12px 16px;color:var(--muted)}
+  .pass-foot::before,.pass-foot::after{content:"";position:absolute;top:-11px;width:20px;height:20px;border-radius:50%;background:var(--bg)}
+  .pass-foot::before{left:-10px} .pass-foot::after{right:-10px}
+
+  /* feedback */
+  .seg{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+  .seg label{position:relative;display:flex;align-items:center;justify-content:center;min-height:48px;border-radius:999px;background:#fff;
+    border:2px solid var(--line);font-weight:700;cursor:pointer;transition:all .15s}
+  .seg label:hover{border-color:#9ec0e6}
+  .seg input{position:absolute;opacity:0;inset:0;margin:0;cursor:pointer}
+  .seg label:has(input:checked){background:var(--primary);border-color:var(--primary);color:#fff}
+  .seg label:has(input:focus-visible){outline:3px solid #f2a900;outline-offset:2px}
+  .fb-q{margin:18px 0 0}
+  .fb-q legend{font-size:1rem}
+
+  /* facilitator panel */
+  .overlay{position:fixed;inset:0;background:rgba(10,31,54,.6);z-index:60;display:flex;justify-content:center;align-items:flex-start;overflow:auto;padding:20px 10px}
+  .overlay[hidden]{display:none}
+  .panel{background:#fff;border-radius:20px;width:100%;max-width:1100px;padding:18px 20px 24px;box-shadow:var(--shadow-lg)}
+  .panel-head{display:flex;justify-content:space-between;align-items:center;gap:10px}
+  .panel-head h2{margin:0;font-size:1.25rem}
+  .panel section{border-top:1px solid var(--line);margin-top:16px;padding-top:4px}
+  .panel h3{margin:12px 0 6px}
+  .btn-ghost{background:#fff;border:2px solid var(--line);border-radius:999px;padding:6px 14px;cursor:pointer;font-weight:600;color:var(--muted)}
+  .btn-ghost:hover{border-color:var(--muted)}
+  .btnrow{display:flex;flex-wrap:wrap;gap:8px}
+  .btnrow .btn{width:auto;min-height:44px;font-size:1rem;margin:6px 0}
+  .tablewrap{overflow:auto;border:1px solid var(--line);border-radius:12px;margin-top:8px}
+  table{border-collapse:collapse;width:100%;font-size:.9375rem}
+  th,td{border-bottom:1px solid var(--line);padding:7px 9px;text-align:left;vertical-align:top}
+  th{background:#f3f6fa;white-space:nowrap;position:sticky;top:0}
+  td input{min-height:38px;min-width:14rem;padding:6px 10px;border-radius:8px}
+  .pass-t{color:var(--ok);font-weight:800}
+  a.btn{text-decoration:none}
+  .live-status{display:flex;gap:8px;align-items:center;font-weight:700;border-radius:12px;padding:8px 12px;margin:8px 0;background:var(--no-bg);color:var(--no)}
+  .live-status.live{background:var(--ok-bg);color:var(--ok)}
+  .live-status.warn{background:var(--hold-bg);color:var(--hold)}
+  .live-dot{width:10px;height:10px;border-radius:50%;background:currentColor;flex:none}
+  .live-status.live .live-dot{animation:pulse 1.6s ease-in-out infinite}
+  @keyframes pulse{50%{opacity:.35}}
+  .sync-local{display:inline-block;margin-top:2px;font-size:.8125rem;font-weight:700;color:var(--hold)}
+  .fail-t{color:var(--red);font-weight:800}
+  .csvbox{width:100%;min-height:120px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.85rem;margin-top:8px}
+  @media (min-width:1100px){html{font-size:17px}}
+</style>
+</head>
+<body>
+<div class="device">
+  <div class="sim-banner" role="note">SIMULATED PROTOTYPE · fictional data · no booking is made</div>
+  <div id="app" aria-live="polite"></div>
+</div>
+
+<div id="fac" class="overlay" hidden role="dialog" aria-modal="true" aria-labelledby="facTitle">
+  <div class="panel">
+    <div class="panel-head">
+      <h2 id="facTitle">Facilitator panel</h2>
+      <button class="btn-ghost" type="button" data-fac="close">Close</button>
+    </div>
+    <section>
+      <h3>Peer test set</h3>
+      <p class="muted">Case Guide suggestion: assign C01, C03 and C04 to three different testers. Turn off “Hide scenario tags” on the start screen to see tags. Record the choice, how well the tester understood the explanation, any confusion and one improvement idea.</p>
+    </section>
+    <section>
+      <h3>Self-check (C01–C06)</h3>
+      <p class="muted">Runs the same rule engine the passenger screens use on each case with default inputs (C06 also with “flexible” and “arrive by 18:00”), and compares the results with the acceptance criteria.</p>
+      <div class="btnrow"><button class="btn primary" type="button" data-fac="selfcheck">Run C01–C06 self-check</button></div>
+      <div id="scOut"></div>
+    </section>
+    <section>
+      <h3>Test log (<span id="logCount">0</span> rows)</h3>
+      <p id="liveStatus" class="live-status" role="status"></p>
+      <p class="muted">Rows go to the shared test log, so every device running this page adds to one list that updates live. A device that cannot write to the shared log keeps its rows until reload, marked “this device only” — export those as CSV. “Expected behaviour met” is filled in automatically. Type observations in the facilitator note column (saved when you leave the box); the Case Guide check question is shown for each row.</p>
+      <div class="btnrow">
+        <button class="btn secondary" type="button" data-fac="csv">Download CSV</button>
+        <button class="btn secondary" type="button" data-fac="copy">Copy CSV</button>
+        <button class="btn secondary" type="button" data-fac="clear" id="clearBtn">Clear log</button>
+      </div>
+      <p id="facMsg" role="status" class="muted"></p>
+      <div id="csvFallback"></div>
+      <div class="tablewrap" id="logOut"></div>
+    </section>
+  </div>
+</div>
+
+<script id="data">
+const DATA = {
+  "snapshot": "10:00",
+  "note": "All flights operate on the same fictional date. Times use one reference time zone.",
+  "cases": [
+    {"id":"C01","tag":"NORMAL","persona":"Travelling alone, must arrive by 21:00",
+     "original":{"flight":"XX101","route":"AAA→BBB","sources":[{"source":"Airline operations","status":"CANCELLED","at":"09:50"}]},
+     "needs":{"party":1,"arrival":"21:00","assistance":"none"},
+     "candidates":[
+       {"id":"A1","flight":"XX211","dep":"16:00","arr":"18:30","seats":3,"updated":"09:58","policy":"verified","assistance":null},
+       {"id":"A2","flight":"XX213","dep":"17:45","arr":"20:15","seats":5,"updated":"09:57","policy":"verified","assistance":null}]},
+    {"id":"C02","tag":"EXCLUDE","persona":"Three travelling together, must arrive by 20:00",
+     "original":{"flight":"XX102","route":"AAA→CCC","sources":[{"source":"Airline operations","status":"CANCELLED","at":"09:50"}]},
+     "needs":{"party":3,"arrival":"20:00","assistance":"none"},
+     "candidates":[
+       {"id":"B1","flight":"XX221","dep":"15:00","arr":"17:30","seats":2,"updated":"09:58","policy":"verified","assistance":null},
+       {"id":"B2","flight":"XX223","dep":"18:45","arr":"21:15","seats":4,"updated":"09:57","policy":"verified","assistance":null}]},
+    {"id":"C03","tag":"ASSIST","persona":"Travelling alone, needs wheelchair assistance, flexible arrival",
+     "original":{"flight":"XX103","route":"AAA→DDD","sources":[{"source":"Airline operations","status":"CANCELLED","at":"09:50"}]},
+     "needs":{"party":1,"arrival":"flexible","assistance":"wheelchair"},
+     "candidates":[
+       {"id":"C1","flight":"XX231","dep":"16:00","arr":"18:30","seats":1,"updated":"09:58","policy":"verified","assistance":"available"},
+       {"id":"C2","flight":"XX233","dep":"15:15","arr":"17:45","seats":2,"updated":"09:59","policy":"verified","assistance":"unknown"}]},
+    {"id":"C04","tag":"UNCERTAIN","persona":"Travelling alone, flexible arrival",
+     "original":{"flight":"XX104","route":"AAA→EEE","sources":[{"source":"Airline operations","status":"CANCELLED","at":"09:50"}]},
+     "needs":{"party":1,"arrival":"flexible","assistance":"none"},
+     "candidates":[
+       {"id":"D1","flight":"XX241","dep":"15:40","arr":"18:10","seats":2,"updated":"09:20","policy":"verified","assistance":null},
+       {"id":"D2","flight":"XX243","dep":"16:45","arr":"19:15","seats":2,"updated":"09:59","policy":"missing","assistance":null}]},
+    {"id":"C05","tag":"CONFLICT","persona":"Travelling alone, must arrive by 22:00",
+     "original":{"flight":"XX105","route":"AAA→FFF","sources":[{"source":"Airline operations","status":"CANCELLED","at":"09:55"},{"source":"Airport display","status":"DELAYED","at":"09:58"}]},
+     "needs":{"party":1,"arrival":"22:00","assistance":"none"},
+     "candidates":[
+       {"id":"E1","flight":"XX251","dep":"17:10","arr":"19:40","seats":4,"updated":"09:59","policy":"verified","assistance":null}]},
+    {"id":"C06","tag":"MISSING","persona":"Two travelling together, no arrival preference given",
+     "original":{"flight":"XX106","route":"AAA→GGG","sources":[{"source":"Airline operations","status":"CANCELLED","at":"09:50"}]},
+     "needs":{"party":2,"arrival":null,"assistance":"none"},
+     "candidates":[
+       {"id":"F1","flight":"XX261","dep":"16:20","arr":"18:50","seats":3,"updated":"09:58","policy":"verified","assistance":null}]}
+  ]
+};
+
+// Facilitator-only: Case Guide "Check" question per case (shown in the test log, never to the passenger).
+const CASE_GUIDE = {
+  C01: "Can the tester explain why both work and why A1 ranks higher?",
+  C02: "Does the tester understand why neither flight is suitable?",
+  C03: "Does the tester consider assistance rather than selecting the earliest flight?",
+  C04: "Can the tester distinguish \u201cnot verified\u201d from \u201csold out\u201d?",
+  C05: "Does the tester understand why even an available alternative cannot be recommended yet?",
+  C06: "Can the tester answer the question without the system inventing a preference?"
+};
+const PEER_TEST_SET = ["C01", "C03", "C04"];
+</script>
+
+<!-- ============ RULE ENGINE (spec sections 4, 5, 7) — no DOM access ============ -->
+<script id="engine">
+const Engine = (() => {
+  const SNAPSHOT = "10:00";          // classroom assumption
+  const FRESHNESS_LIMIT_MIN = 15;    // classroom assumption
+
+  const toMin = t => { const [h, m] = String(t).split(":").map(Number); return h * 60 + m; };
+  const ageMin = updated => toMin(SNAPSHOT) - toMin(updated);
+  const isTime = v => typeof v === "string" && /^\d{1,2}:\d{2}$/.test(v);
+  const sourcesDisagree = original => new Set(original.sources.map(s => s.status)).size > 1;
+
+  function classify(f, needs) {
+    const age = ageMin(f.updated);
+    // Hard constraints (a, b) before uncertainty (c–e); first matching rule wins.
+    if (f.seats < needs.party) return { status: "EXCLUDED", reason: "seats", age };
+    if (isTime(needs.arrival) && toMin(f.arr) > toMin(needs.arrival)) return { status: "EXCLUDED", reason: "deadline", age };
+    if (age > FRESHNESS_LIMIT_MIN) return { status: "HOLD", reason: "stale", age };
+    if (f.policy !== "verified") return { status: "HOLD", reason: "policy", age };
+    if (needs.assistance === "wheelchair" && f.assistance !== "available") return { status: "HOLD", reason: "assistance", age };
+    return { status: "FEASIBLE", reason: null, age };
+  }
+
+  function explain(f, needs, best) {
+    if (f.status === "FEASIBLE") {
+      let s = f.rank === 1
+        ? `Arrives at ${f.arr}, the earliest option that fits your needs (${f.seats} ${f.seats === 1 ? "seat" : "seats"}, info updated ${f.age} min ago).`
+        : `Also fits your needs; arrives at ${f.arr}, later than option #1.`;
+      if (needs.assistance === "wheelchair") s += " Wheelchair assistance is marked available; staff will reconfirm it before booking.";
+      return s;
+    }
+    switch (f.reason) {
+      case "seats":    return `Only ${f.seats} ${f.seats === 1 ? "seat" : "seats"} left for your party of ${needs.party}.`;
+      case "deadline": return `Arrives at ${f.arr}, after your ${needs.arrival} deadline.`;
+      case "stale":    return `Seat information is ${f.age} minutes old (limit ${FRESHNESS_LIMIT_MIN}), so it may be out of date.`;
+      case "policy":   return "The rebooking rule for this flight could not be checked.";
+      case "assistance": {
+        // "even though it arrives earlier" is only added when it is true (earlier than option #1).
+        const earlier = best && toMin(f.arr) < toMin(best.arr);
+        return "We don't know yet whether wheelchair assistance is available on this flight" + (earlier ? ", even though it arrives earlier." : ".");
+      }
+    }
+    return "";
+  }
+
+  // Display-only condition checks shown as chips on each card (same thresholds as classify()).
+  function checks(f, needs) {
+    const age = ageMin(f.updated), pl = n => n === 1 ? "seat" : "seats", out = [];
+    out.push(f.seats >= needs.party
+      ? { state: "ok", text: `${f.seats} ${pl(f.seats)} available` }
+      : { state: "fail", text: `Only ${f.seats} ${pl(f.seats)} for ${needs.party}` });
+    if (isTime(needs.arrival)) out.push(toMin(f.arr) <= toMin(needs.arrival)
+      ? { state: "ok", text: `Arrives by ${needs.arrival}` }
+      : { state: "fail", text: `Arrives after ${needs.arrival}` });
+    else out.push({ state: "na", text: "Flexible arrival" });
+    out.push(age <= FRESHNESS_LIMIT_MIN
+      ? { state: "ok", text: `Seats updated ${f.updated} (${age} min ago)` }
+      : { state: "unk", text: `Seats updated ${f.updated} (${age} min ago)` });
+    out.push(f.policy === "verified"
+      ? { state: "ok", text: "Rebooking rule checked" }
+      : { state: "unk", text: "Rebooking rule not checked" });
+    if (needs.assistance === "wheelchair") out.push(f.assistance === "available"
+      ? { state: "ok", text: "Wheelchair assistance available" }
+      : { state: "unk", text: "Wheelchair assistance unknown" });
+    return out;
+  }
+
+  function evaluateCase(c, needs) {
+    if (sourcesDisagree(c.original)) return { result: "STOP_UNVERIFIED_DISRUPTION", needs, flights: [] };
+    if (needs.arrival === null || needs.arrival === undefined || needs.arrival === "") return { result: "ASK_ARRIVAL_PREFERENCE", needs, flights: [] };
+
+    const all = c.candidates.map(f => Object.assign({}, f, classify(f, needs), { rank: null }));
+    const feasible = all.filter(f => f.status === "FEASIBLE")
+      .sort((a, b) => toMin(a.arr) - toMin(b.arr) || toMin(a.dep) - toMin(b.dep));
+    feasible.forEach((f, i) => { f.rank = i + 1; });
+    const hold = all.filter(f => f.status === "HOLD");
+    const excluded = all.filter(f => f.status === "EXCLUDED");
+    const best = feasible[0] || null;
+    all.forEach(f => { f.why = explain(f, needs, best); });
+
+    const result = feasible.length ? "OPTIONS_AVAILABLE" : hold.length ? "NO_CURRENTLY_VERIFIABLE_OPTION" : "NO_FEASIBLE_OPTION";
+    return { result, needs, flights: [...feasible, ...hold, ...excluded] };
+  }
+
+  // ---- Self-check against spec section 7 ----
+  const EXPECTED = [
+    { label: "C01 default", id: "C01", result: "OPTIONS_AVAILABLE",
+      flights: { A1: { status: "FEASIBLE", rank: 1 }, A2: { status: "FEASIBLE", rank: 2 } } },
+    { label: "C02 default", id: "C02", result: "NO_FEASIBLE_OPTION",
+      flights: { B1: { status: "EXCLUDED", reason: "seats" }, B2: { status: "EXCLUDED", reason: "deadline" } } },
+    { label: "C03 default", id: "C03", result: "OPTIONS_AVAILABLE",
+      flights: { C1: { status: "FEASIBLE", rank: 1, whyIncludes: "staff will reconfirm it before booking" }, C2: { status: "HOLD", reason: "assistance" } } },
+    { label: "C04 default", id: "C04", result: "NO_CURRENTLY_VERIFIABLE_OPTION",
+      flights: { D1: { status: "HOLD", reason: "stale", age: 40 }, D2: { status: "HOLD", reason: "policy" } } },
+    { label: "C05 default", id: "C05", result: "STOP_UNVERIFIED_DISRUPTION", flights: {} },
+    { label: "C06 default", id: "C06", result: "ASK_ARRIVAL_PREFERENCE", flights: {} },
+    { label: "C06 + flexible", id: "C06", override: { arrival: "flexible" }, result: "OPTIONS_AVAILABLE",
+      flights: { F1: { status: "FEASIBLE", rank: 1 } } },
+    { label: "C06 + arrive by 18:00", id: "C06", override: { arrival: "18:00" }, result: "NO_FEASIBLE_OPTION",
+      flights: { F1: { status: "EXCLUDED", reason: "deadline" } } },
+  ];
+
+  const describeExpected = exp => {
+    const ids = Object.keys(exp.flights);
+    if (!ids.length) return exp.result + " · no list shown";
+    return exp.result + " · " + ids.map(id => {
+      const e = exp.flights[id];
+      if (e.status === "FEASIBLE") return `${id} #${e.rank}` + (e.whyIncludes ? " (assistance reconfirm note)" : "");
+      return `${id} ${e.status} (${e.reason}${e.age != null ? ", " + e.age + " min" : ""})`;
+    }).join(", ");
+  };
+  const describeActual = (res, exp) => {
+    if (!res.flights.length) return res.result + " · no list shown";
+    return res.result + " · " + res.flights.map(f => {
+      const e = exp.flights[f.id] || {};
+      if (f.status === "FEASIBLE") return `${f.id} #${f.rank}` + (e.whyIncludes && f.why.includes(e.whyIncludes) ? " (assistance reconfirm note)" : "");
+      return `${f.id} ${f.status} (${f.reason}${e.age != null ? ", " + f.age + " min" : ""})`;
+    }).join(", ");
+  };
+
+  function runSelfCheck(data) {
+    return EXPECTED.map(exp => {
+      const c = data.cases.find(x => x.id === exp.id);
+      const needs = Object.assign({}, c.needs, exp.override || {});
+      const res = evaluateCase(c, needs);
+      let pass = res.result === exp.result && res.flights.length === Object.keys(exp.flights).length;
+      for (const [id, e] of Object.entries(exp.flights)) {
+        const f = res.flights.find(x => x.id === id);
+        if (!f) { pass = false; continue; }
+        if (e.status !== f.status) pass = false;
+        if (e.rank != null && e.rank !== f.rank) pass = false;
+        if (e.reason != null && e.reason !== f.reason) pass = false;
+        if (e.age != null && e.age !== f.age) pass = false;
+        if (e.whyIncludes && !f.why.includes(e.whyIncludes)) pass = false;
+      }
+      return { label: exp.label, expected: describeExpected(exp), actual: describeActual(res, exp), pass };
+    });
+  }
+
+  return { SNAPSHOT, FRESHNESS_LIMIT_MIN, toMin, ageMin, isTime, sourcesDisagree, evaluateCase, checks, runSelfCheck };
+})();
+if (typeof module !== "undefined") module.exports = Engine;
+</script>
+
+
+<!-- ============ UI ============ -->
+<script id="ui">
+(() => {
+  const app = document.getElementById("app");
+  const S = {
+    screen: 0, tester: "", hideTags: true,
+    caseId: null, needs: null, arrivalMode: null, arrivalTime: "",
+    res: null, chosen: null, outcome: null,
+    t0: null, tta: null, log: [], clearArmed: false
+  };
+  const esc = s => String(s ?? "").replace(/[&<>"']/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch]));
+  const cur = () => DATA.cases.find(c => c.id === S.caseId);
+  const airports = c => c.original.route.split("→");
+
+  // ---------- icons (inline SVG, decorative) ----------
+  const svg = p => `<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">${p}</svg>`;
+  const I = {
+    plane: svg('<path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/>'),
+    check: svg('<path d="M5 12.5l4.5 4.5L19 7.5"/>'),
+    x: svg('<path d="M6 6l12 12M18 6L6 18"/>'),
+    star: svg('<path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"/>'),
+    pause: svg('<circle cx="12" cy="12" r="9"/><path d="M10 9v6M14 9v6"/>'),
+    help: svg('<circle cx="12" cy="12" r="9"/><path d="M9.6 9.3a2.5 2.5 0 1 1 3.4 2.3c-.6.3-1 .8-1 1.5v.4"/><path d="M12 16.8h.01"/>'),
+    info: svg('<circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 7.8h.01"/>'),
+    alert: svg('<path d="M10.3 4.2 2.6 17.5A2 2 0 0 0 4.3 20.5h15.4a2 2 0 0 0 1.7-3L13.7 4.2a2 2 0 0 0-3.4 0z"/><path d="M12 9.5v4M12 17h.01"/>'),
+    clock: svg('<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>'),
+    user: svg('<circle cx="12" cy="8" r="4"/><path d="M4.5 20.5c0-4 3.4-6.5 7.5-6.5s7.5 2.5 7.5 6.5"/>'),
+    users: svg('<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 2.9-5.8 6.5-5.8s6.5 2.2 6.5 5.8"/><path d="M15.5 4.6a3.5 3.5 0 0 1 0 6.8M17.5 14.6c2.3.6 4 2.5 4 5.4"/>'),
+    wheel: svg('<circle cx="11" cy="4" r="1.6"/><path d="M11 7.5v5.5h5l2.5 6"/><path d="M11 10h4"/><path d="M8 10.8A5.5 5.5 0 1 0 15.6 18"/>'),
+    chev: svg('<path d="M9 6l6 6-6 6"/>'),
+    back: svg('<path d="M19 12H5M11 6l-6 6 6 6"/>'),
+    staff: svg('<path d="M4 15v-3a8 8 0 0 1 16 0v3"/><path d="M4 15a2 2 0 0 0 2 2h1.5v-5H6a2 2 0 0 0-2 2zM20 15a2 2 0 0 1-2 2h-1.5v-5H18a2 2 0 0 1 2 2z"/><path d="M18 17v.5a3 3 0 0 1-3 3h-2"/>'),
+    task: svg('<path d="M9 5h10M9 12h10M9 19h10"/><path d="M4 5l1 1 2-2M4 12l1 1 2-2M4 19l1 1 2-2"/>'),
+    send: svg('<path d="M21.5 2.5 10.5 13.5"/><path d="M21.5 2.5 14.5 21.5l-4-8-8-4z"/>'),
+    shield: svg('<path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M8.5 12l2.5 2.5 4.5-5"/>')
+  };
+
+  // ---------- team results form (Google Forms) ----------
+  // Results are submitted by OPENING a link (a page navigation), which the artifact viewer allows; scripted requests to other sites are blocked.
+  const FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSdwCDEFNL5iaROe-156jpTGydNHeS8AZGqInRkDvk9tfCYAng/formResponse";
+  const FORM_FIELDS = {
+    tester: "entry.1992168932", case_id: "entry.1309066521", inputs_used: "entry.690248875", inputs_changed: "entry.2138682312",
+    case_result: "entry.205053122", action: "entry.1482542985", expected_behaviour_met: "entry.1445638819", time_on_task_s: "entry.174332614",
+    q1_understood_reasons: "entry.2019626490", q2_info_used_clear: "entry.1718237742", q3_next_step_clear: "entry.322662921",
+    q4_confusing: "entry.1612261123", q5_improvement: "entry.798663224"
+  };
+  const formBody = r => {
+    const q = new URLSearchParams();
+    Object.entries(FORM_FIELDS).forEach(([k, e]) => q.append(e, String(r[k] ?? "")));
+    return q;
+  };
+  function autoSend(r) {
+    // On an ordinary web host (e.g. GitHub Pages) this posts in the background with no new tab.
+    // Inside the claude.ai artifact viewer such requests are blocked, so the promise rejects and the manual button is shown.
+    const timeout = new Promise((_, rej) => setTimeout(() => rej(new Error("timeout")), 8000));
+    let sent;
+    try { sent = fetch(FORM_URL, { method: "POST", mode: "no-cors", body: formBody(r) }); }
+    catch (e) { return Promise.reject(e); }
+    return Promise.race([sent, timeout]);
+  }
+  const formLink = r => {
+    const q = new URLSearchParams();
+    Object.entries(FORM_FIELDS).forEach(([k, e]) => q.append(e, String(r[k] ?? "")));
+    q.append("submit", "Submit");
+    return FORM_URL + "?" + q.toString();
+  };
+
+  // ---------- helpers ----------
+  function resetNeeds() {
+    const n = cur().needs;
+    S.needs = { party: n.party, arrival: n.arrival, assistance: n.assistance };
+    S.arrivalMode = n.arrival == null ? null : (n.arrival === "flexible" ? "flexible" : "time");
+    S.arrivalTime = S.arrivalMode === "time" ? n.arrival : "";
+  }
+  const arrivalText = a => a == null ? "Not answered" : a === "flexible" ? "Flexible" : `Arrive by ${a}`;
+  const assistText = a => a === "wheelchair" ? "Wheelchair assistance" : "None";
+  const travellers = p => `${p} ${p === 1 ? "traveller" : "travellers"}`;
+  const inputsUsed = n => `party=${n.party}; arrival=${n.arrival ?? "not answered"}; assistance=${n.assistance}`;
+  const inputsChanged = (n, d) => (n.party !== d.party || n.assistance !== d.assistance || (d.arrival != null && n.arrival !== d.arrival)) ? "yes" : "no";
+  const stopTimer = () => { S.tta = S.t0 != null ? Math.round((performance.now() - S.t0) / 100) / 10 : null; };
+
+  function helpReason(res) {
+    const c = cur();
+    switch (res.result) {
+      case "STOP_UNVERIFIED_DISRUPTION":
+        return "Your flight status could not be confirmed. The sources disagree: " +
+          c.original.sources.map(s => `${s.source} says ${s.status} (${s.at})`).join("; ") + ".";
+      case "NO_FEASIBLE_OPTION":
+        return "None of the alternative flights meets your needs.";
+      case "NO_CURRENTLY_VERIFIABLE_OPTION":
+        return "No option could be verified right now — " + res.flights.filter(f => f.status === "HOLD").map(f =>
+          f.reason === "stale" ? `${f.flight}: seat information is ${f.age} min old`
+          : f.reason === "policy" ? `${f.flight}: rebooking rule could not be checked`
+          : `${f.flight}: wheelchair assistance not confirmed`).join("; ") + ".";
+      default:
+        return "You asked for help while options were shown.";
+    }
+  }
+  function expectedMet(res, o) {
+    if (res.result === "OPTIONS_AVAILABLE") return o.type === "chose" ? "Yes" : "Partly (asked for help although an option fit)";
+    return o.type === "help" ? "Yes" : "No";
+  }
+
+  // ---------- layout ----------
+  const STEPS = ["Status", "Needs", "Options", "Done"];
+  function header(v) {
+    const steps = v.step ? `<ol class="steps" aria-label="Progress: step ${v.step} of 4, ${STEPS[v.step - 1]}">${STEPS.map((s, i) =>
+      `<li class="${i + 1 < v.step ? "done" : i + 1 === v.step ? "cur" : ""}"${i + 1 === v.step ? ' aria-current="step"' : ""}>${s}</li>`).join("")}</ol>` : "";
+    return `
+      <header class="hdr${v.hero ? " hero" : ""}">
+        ${v.hero ? `<div class="hero-plane" aria-hidden="true">${I.plane.replace('class="ic"', 'width="120" height="120"')}</div>` : ""}
+        <div class="hdr-top">
+          <div class="brand">${I.plane}<span>SkyAssist <span class="brand-sub">(fictional)</span></span></div>
+          <button type="button" class="fac-btn" id="facBtn" aria-haspopup="dialog">Facilitator</button>
+        </div>
+        ${steps}
+        <h1 tabindex="-1">${v.title}</h1>
+        ${v.sub ? `<p class="hdr-sub">${v.sub}</p>` : ""}
+      </header>`;
+  }
+  const snap = () => `<p class="snap">${I.clock}<span>Data snapshot: ${Engine.SNAPSHOT} · All flights operate on the same fictional date</span></p>`;
+  const backLink = (action, label) => `<p><button type="button" class="link" data-action="${action}">${I.back} ${label}</button></p>`;
+
+  // ---------- screen 0: start ----------
+  function vStart() {
+    return {
+      hero: true,
+      title: `Flight disrupted?<span class="h1-sub"><span class="sr-only">— </span>Rebooking assistant (prototype)</span>`,
+      sub: "See alternative flights with clear reasons, then send your choice to staff or ask for help.",
+      body: `
+        <div class="card task">
+          <span class="bubble">${I.task}</span>
+          <div>
+            <h2>Your task</h2>
+            <p>Play the passenger you pick. Find a suitable alternative flight, or get help if none can be confirmed. Nothing is booked here.</p>
+          </div>
+        </div>
+        <div class="field">
+          <label for="tester">Tester name or number <span class="hint">(optional, used only in the test log)</span></label>
+          <input id="tester" type="text" value="${esc(S.tester)}" autocomplete="off" placeholder="T1">
+        </div>
+        <label class="toggle"><input type="checkbox" id="hideTags" ${S.hideTags ? "checked" : ""}> Hide scenario tags (for peer testing)</label>
+        <h2>Choose your passenger</h2>
+        <ul class="pax-list">
+          ${DATA.cases.map(c => `
+            <li><button type="button" class="pax" data-action="pick" data-id="${c.id}">
+              <span class="avatar">${c.needs.party > 1 ? I.users : I.user}</span>
+              <span class="pax-persona">${esc(c.persona)}</span>
+              <span class="pax-meta">Case ${c.id}${S.hideTags ? "" : ` <span class="tag">${c.tag}</span>${PEER_TEST_SET.includes(c.id) ? ' <span class="tag peer">Peer test set</span>' : ""}`}</span>
+              <span class="chev">${I.chev}</span>
+            </button></li>`).join("")}
+        </ul>`
+    };
+  }
+
+  // ---------- screen 1: disruption notice ----------
+  function vNotice() {
+    const c = cur(), o = c.original, [from, to] = airports(c);
+    const conflict = Engine.sourcesDisagree(o);
+    const board = `
+      <div class="card">
+        <div class="board-label">Your original flight · ${o.flight}</div>
+        <div class="board-route" aria-label="${from} to ${to}">
+          <span class="apt">${from}</span><span class="route-line" aria-hidden="true"><span></span>${I.plane}<span></span></span><span class="apt">${to}</span>
+        </div>
+        <ul class="srcs" aria-label="Flight status by source">
+          ${o.sources.map(s => `<li><span><span class="src-name">${esc(s.source)}</span><span class="src-at">Updated ${s.at}</span></span>
+            <span class="pill ${s.status.toLowerCase()}">${s.status}</span></li>`).join("")}
+        </ul>
+      </div>`;
+    if (conflict) return {
+      step: 1, title: "We can’t confirm your flight status yet", sub: `Flight ${o.flight} · ${from} → ${to}`,
+      body: board + `
+        <div class="callout hold">${I.alert}<div>
+          <p><strong>We can't confirm what happened to your flight yet, so we can't safely recommend alternatives. Please ask staff to verify your flight status.</strong></p>
+          <p>Other flights may have seats, but we only show them once staff confirm your flight is cancelled.</p>
+        </div></div>
+        <button type="button" class="btn primary" data-action="verify">${I.staff} Ask staff to verify</button>
+        ${snap()}${backLink("home", "Choose another passenger")}`
+    };
+    return {
+      step: 1, title: "Your flight has been cancelled", sub: `Flight ${o.flight} · ${from} → ${to}`,
+      body: board + `
+        <p>Flight ${o.flight} will not operate. We can show you other flights on the same day and explain which ones fit your needs.</p>
+        <button type="button" class="btn primary" data-action="toNeeds">See alternative flights ${I.chev}</button>
+        ${snap()}${backLink("home", "Choose another passenger")}`
+    };
+  }
+
+  // ---------- screen 2: needs ----------
+  function needsValid() {
+    const p = S.needs.party;
+    const partyOk = Number.isInteger(p) && p >= 1 && p <= 9;
+    const arrOk = S.arrivalMode === "flexible" || (S.arrivalMode === "time" && Engine.isTime(S.arrivalTime));
+    return partyOk && arrOk;
+  }
+  // Custom 24-hour picker: the browser's native time field follows the browser language (e.g. Korean AM/PM), so selects are used instead.
+  function timePicker() {
+    const [h, m] = Engine.isTime(S.arrivalTime) ? S.arrivalTime.split(":") : ["", "00"];
+    const hours = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, "0"));
+    const mins = ["00", "15", "30", "45"];
+    if (m && !mins.includes(m)) mins.push(m);
+    return `<span class="timepick" role="group" aria-label="Latest arrival time, 24-hour clock">
+      <select id="arrH" aria-label="Hour (24-hour)"><option value=""${h ? "" : " selected"}>HH</option>${hours.map(x => `<option value="${x}"${x === h ? " selected" : ""}>${x}</option>`).join("")}</select>
+      <span aria-hidden="true">:</span>
+      <select id="arrM" aria-label="Minutes">${mins.map(x => `<option value="${x}"${x === m ? " selected" : ""}>${x}</option>`).join("")}</select>
+    </span>`;
+  }
+  function vNeeds() {
+    const n = S.needs, unanswered = S.arrivalMode === null;
+    return {
+      step: 2, title: "Your needs", sub: "Check these details and change anything that isn’t right.",
+      body: `
+        <fieldset style="margin-top:4px">
+          <legend id="partyLbl">How many people are travelling together?</legend>
+          <div class="qty" role="group" aria-labelledby="partyLbl">
+            <button type="button" data-action="partyDec" aria-label="Fewer travellers">−</button>
+            <input id="party" type="number" min="1" max="9" step="1" inputmode="numeric" value="${n.party}" aria-labelledby="partyLbl">
+            <button type="button" data-action="partyInc" aria-label="More travellers">+</button>
+          </div>
+        </fieldset>
+        <fieldset>
+          <legend>Do you have an arrival deadline, or are you flexible?</legend>
+          <p class="ask" id="arrHint" ${unanswered ? "" : "hidden"}>${I.help} Please answer this so we can show suitable flights.</p>
+          <div class="opt"><label class="opt-radio"><input type="radio" name="arr" value="time" ${S.arrivalMode === "time" ? "checked" : ""}><span class="opt-label">Arrive by</span></label>
+            ${timePicker()}</div>
+          <label class="opt"><input type="radio" name="arr" value="flexible" ${S.arrivalMode === "flexible" ? "checked" : ""}><span class="opt-label">I’m flexible</span></label>
+        </fieldset>
+        <fieldset>
+          <legend>Do you need assistance at the airport?</legend>
+          <label class="opt"><input type="radio" name="assist" value="none" ${n.assistance === "none" ? "checked" : ""}><span class="opt-label">None</span></label>
+          <label class="opt"><input type="radio" name="assist" value="wheelchair" ${n.assistance === "wheelchair" ? "checked" : ""}>${I.wheel}<span class="opt-label">Wheelchair assistance</span></label>
+        </fieldset>
+        <p class="note">${I.shield}<span>We only use needs you tell us. We never guess assistance needs.</span></p>
+        <button type="button" class="btn primary" id="showOpts" data-action="showOptions" ${needsValid() ? "" : "disabled"}>Show options ${I.chev}</button>
+        <p><button type="button" class="link" data-action="resetNeeds">Reset to case defaults</button></p>
+        ${snap()}${backLink("toNotice", "Back")}`
+    };
+  }
+
+  // ---------- screen 3: options ----------
+  function badge(f) {
+    if (f.status === "FEASIBLE") return f.rank === 1
+      ? `<span class="badge b-rank1">${I.star}<span>#1 Recommended</span></span>`
+      : `<span class="badge b-rank">${I.check}<span>#${f.rank} Also suitable</span></span>`;
+    if (f.status === "HOLD") return `<span class="badge b-hold">${I.pause}<span>On hold – needs staff check</span></span>`;
+    return `<span class="badge b-excl">${I.x}<span>Not suitable</span></span>`;
+  }
+  const CHIP = { ok: [I.check, "Meets:"], fail: [I.x, "Does not meet:"], unk: [I.help, "Not confirmed:"], na: [I.info, ""] };
+  function card(f) {
+    const c = cur(), [from, to] = airports(c), n = S.res.needs, chosen = S.chosen === f.id;
+    const chips = Engine.checks(f, n).map(k => `<li class="c-${k.state}">${CHIP[k.state][0]}<span>${CHIP[k.state][1] ? `<span class="sr-only">${CHIP[k.state][1]} </span>` : ""}${esc(k.text)}</span></li>`).join("");
+    const maybe = f.status === "HOLD"
+      ? (f.reason === "assistance" ? "This flight may still work — staff need to confirm assistance first." : "Seats may still be free — we just can't confirm them yet.")
+      : "";
+    return `
+      <article class="fcard s-${f.status}${f.rank === 1 ? " rank1" : ""}${chosen ? " chosen" : ""}" aria-labelledby="fl-${f.id}">
+        <div class="fc-main">
+          <div class="fc-top"><h3 class="fc-num" id="fl-${f.id}">${f.flight}</h3>${badge(f)}</div>
+          <div class="fc-route">
+            <div class="fc-time"><span class="sr-only">Departs </span><span class="t">${f.dep}</span><span class="ap">${from}</span></div>
+            <div class="route-line" aria-hidden="true"><span></span>${I.plane}<span></span></div>
+            <div class="fc-time r"><span class="sr-only">Arrives </span><span class="t">${f.arr}</span><span class="ap">${to}</span></div>
+          </div>
+          <ul class="chips" aria-label="What was checked">${chips}</ul>
+        </div>
+        <div class="fc-why">
+          <p><strong>Why?</strong> ${esc(f.why)}</p>
+          ${f.status === "FEASIBLE" ? `
+            <p class="fc-recheck">Staff must recheck seats and rules before booking.</p>
+            <button type="button" class="btn ${chosen ? "selected" : "secondary"}" data-action="choose" data-id="${f.id}" aria-pressed="${chosen}">
+              ${chosen ? `${I.check} Your preferred flight` : "Choose this flight"}</button>` : ""}
+          ${f.status === "HOLD" ? `<p class="fc-maybe">${maybe}</p><p class="fc-hold">${I.pause} Staff must check this first</p>` : ""}
+        </div>
+      </article>`;
+  }
+  function vOptions() {
+    const r = S.res, n = r.needs;
+    const banners = {
+      OPTIONS_AVAILABLE: `<div class="callout ok" role="status">${I.check}<div><p><strong>Here are your options, best first.</strong></p></div></div>`,
+      NO_FEASIBLE_OPTION: `<div class="callout no" role="status">${I.x}<div><p><strong>None of these flights meets your needs. Please ask staff for help.</strong></p></div></div>`,
+      NO_CURRENTLY_VERIFIABLE_OPTION: `<div class="callout hold" role="status">${I.pause}<div><p><strong>We can't verify any option right now. Availability needs refreshing or a policy needs checking. Please ask staff for help.</strong></p><p>This is not the same as sold out — these flights may still have seats.</p></div></div>`
+    };
+    const feasible = r.flights.filter(f => f.status === "FEASIBLE");
+    const hold = r.flights.filter(f => f.status === "HOLD");
+    const excl = r.flights.filter(f => f.status === "EXCLUDED");
+    const chosenF = r.flights.find(f => f.id === S.chosen);
+    const helpPrimary = r.result !== "OPTIONS_AVAILABLE";
+    return {
+      step: 3, title: "Your options", sub: `${travellers(n.party)} · ${arrivalText(n.arrival)} · ${n.assistance === "wheelchair" ? "Wheelchair assistance" : "No assistance"}`,
+      body: `
+        <div class="needs-sum"><button type="button" class="link" data-action="toNeeds">Change your needs</button></div>
+        ${banners[r.result] || ""}
+        ${feasible.map(card).join("")}
+        ${hold.map(card).join("")}
+        ${excl.length ? `<details class="excluded"><summary><span class="chev-d">${I.chev}</span>Not suitable (${excl.length})</summary>${excl.map(card).join("")}</details>` : ""}
+        <details class="how">
+          <summary><span class="chev-d">${I.chev}</span>How was this decided?</summary>
+          <ol>
+            <li>If sources disagree about your original flight, we stop and ask staff to verify it.</li>
+            <li>If we don’t know your arrival preference, we ask you first.</li>
+            <li><strong>Not suitable</strong> if there are fewer seats than people in your party.</li>
+            <li><strong>Not suitable</strong> if it arrives after your deadline.</li>
+            <li><strong>On hold</strong> if seat information is more than ${Engine.FRESHNESS_LIMIT_MIN} minutes old.</li>
+            <li><strong>On hold</strong> if the rebooking rule for the flight could not be checked.</li>
+            <li><strong>On hold</strong> if you asked for wheelchair assistance and it is not marked available.</li>
+            <li>Otherwise the flight fits. Flights that fit are ranked by earliest arrival.</li>
+          </ol>
+          <p>Must-have needs (seats, deadline) are checked before uncertain information. Data snapshot: ${Engine.SNAPSHOT}. Freshness limit: ${Engine.FRESHNESS_LIMIT_MIN} minutes. Both are classroom assumptions.</p>
+          <p><strong>Results come from predefined test rules applied to fictional data, not from a trained AI model.</strong></p>
+        </details>
+        ${snap()}${backLink("toNeeds", "Back to your needs")}`,
+      footer: `
+        <div class="choicebar">
+          ${chosenF ? `
+            <div class="choice-flight"><span>Your preferred flight: ${chosenF.flight}</span><span class="tnum">${chosenF.dep} → ${chosenF.arr}</span></div>
+            <p class="muted">This sends your choice to staff. It is not a booking.</p>
+            <button type="button" class="btn primary" data-action="request">Request staff confirmation</button>` : ""}
+          <button type="button" class="btn ${helpPrimary && !chosenF ? "primary" : "secondary"}" data-action="help">${I.staff} Ask staff for help</button>
+        </div>`
+    };
+  }
+
+  // ---------- screen 4: request sent / help ----------
+  function vDone() {
+    const c = cur(), n = S.res ? S.res.needs : S.needs, o = S.outcome, [from, to] = airports(c);
+    const f = o.type === "chose" ? S.res.flights.find(x => x.id === o.flightId) : null;
+    const top = f ? `
+      <p>Your preferred flight ${f.flight} has been sent to staff.</p>
+      <p><span class="notbook">${I.info} This is not a booking yet.</span></p>
+      <p>Staff will recheck current seats${n.assistance === "wheelchair" ? ", the rebooking rules and wheelchair assistance" : " and the rebooking rules"}, then confirm or change your itinerary.</p>`
+    : `
+      <p>A staff member will help you.</p>
+      <div class="callout info">${I.info}<div><p><strong>Reason</strong></p><p>${esc(o.reason)}</p></div></div>`;
+    return {
+      step: 4, title: f ? "Request sent to staff" : "Help requested", sub: f ? "Your choice is waiting for a staff check." : "Show the summary below at the desk.",
+      body: top + `
+        <section class="pass" aria-labelledby="sumh">
+          <div class="pass-head">${I.plane}<span id="sumh">Desk pass</span><span class="case">Case ${c.id}</span></div>
+          <div class="pass-body">
+            ${f ? `<div class="fc-route" style="margin:0 0 12px">
+                <div class="fc-time"><span class="sr-only">Departs </span><span class="t">${f.dep}</span><span class="ap">${from} · ${f.flight}</span></div>
+                <div class="route-line" aria-hidden="true"><span></span>${I.plane}<span></span></div>
+                <div class="fc-time r"><span class="sr-only">Arrives </span><span class="t">${f.arr}</span><span class="ap">${to}</span></div>
+              </div>` : ""}
+            <h2>Your case summary — show this at the desk</h2>
+            <dl>
+              <dt>Case ID</dt><dd>${c.id}</dd>
+              <dt>Original flight</dt><dd>${c.original.flight} · ${from} → ${to}</dd>
+              <dt>Party size</dt><dd>${n.party}</dd>
+              <dt>Arrival</dt><dd>${arrivalText(n.arrival)}</dd>
+              <dt>Assistance</dt><dd>${assistText(n.assistance)}</dd>
+              ${f ? `<dt>Preferred flight</dt><dd>${f.flight} (${f.dep} → ${f.arr})</dd>` : `<dt>Reason for help</dt><dd>${esc(o.reason)}</dd>`}
+              <dt>Data snapshot</dt><dd>${Engine.SNAPSHOT}</dd>
+            </dl>
+          </div>
+          <div class="pass-foot">${I.info}<span>${f ? "Preferred option only — not booked. Staff decide the final itinerary." : "No flight has been chosen or booked."}</span></div>
+        </section>
+        <button type="button" class="btn primary" data-action="toFeedback">Continue ${I.chev}</button>`
+    };
+  }
+
+  // ---------- screen 5: feedback ----------
+  const seg = (name, q) => `
+    <fieldset class="fb-q"><legend>${q}</legend>
+      <div class="seg">${["Yes", "Partly", "No"].map(v => `<label><input type="radio" name="${name}" value="${v}">${v}</label>`).join("")}</div>
+    </fieldset>`;
+  function vFeedback() {
+    return {
+      title: "Quick feedback", sub: "About 30 seconds. Your answers help us improve the prototype.",
+      body: `
+        ${seg("q1", "1. Did you understand why the options were ranked or held?")}
+        ${seg("q2", "2. Could you tell what information the assistant used?")}
+        ${seg("q3", "3. Was it clear what you should do next?")}
+        <div class="field fb-q"><label for="q4">4. Was anything confusing?</label><input type="text" id="q4" autocomplete="off"></div>
+        <div class="field"><label for="q5">5. One improvement idea</label><input type="text" id="q5" autocomplete="off"></div>
+        <p class="note">${I.info}<span>Your answers are saved to the team’s test log. Use a tester number, not your name.</span></p>
+        <button type="button" class="btn primary" data-action="saveFeedback">Save and finish</button>
+        <p style="text-align:center"><button type="button" class="link" data-action="skipFeedback">Skip feedback</button></p>`
+    };
+  }
+
+  // ---------- screen 6: send results to the team form ----------
+  function vSend() {
+    const r = S.lastRow;
+    if (S.auto === "sending") return {
+      title: "Sending your results", sub: "This takes a moment.",
+      body: `<div class="callout info">${I.send}<div><p><strong>Sending your answers to the test team…</strong></p></div></div>`
+    };
+    if (S.auto === "sent") return {
+      title: "Results sent", sub: "Thank you for testing.",
+      body: `
+        <div class="callout ok">${I.check}<div><p><strong>Your answers were sent to the test team.</strong></p><p>You can hand the device back or start again.</p></div></div>
+        <button type="button" class="btn primary" data-action="finish">Finish</button>`
+    };
+    return {
+      title: "Send your results", sub: "One tap shares your answers with the test team.",
+      body: `
+        <div class="card task">
+          <span class="bubble">${I.send}</span>
+          <div>
+            <h2>Last step: tap “Send results”</h2>
+            <p>A Google page opens in a new tab and shows “Your response has been recorded”. Then come back here and tap Finish.</p>
+          </div>
+        </div>
+        <a class="btn primary" href="${esc(formLink(r))}" target="_blank" rel="noopener noreferrer" data-action="sendForm">${I.send} Send results to the team</a>
+        ${S.sent ? `<div class="callout ok">${I.check}<div><p><strong>Sent.</strong> Check that the Google page says your response has been recorded.</p></div></div>` : ""}
+        <p class="note">${I.info}<span>Only your test answers are sent: the case, your choice, the time taken and your feedback. No real personal data.</span></p>
+        <button type="button" class="btn secondary" data-action="finish">Finish</button>
+        <p class="ask" id="finishHint" hidden>${I.alert} Your results haven’t been sent yet. Tap “Send results to the team” first, or tap Finish again to skip.</p>`
+    };
+  }
+
+  const VIEWS = [vStart, vNotice, vNeeds, vOptions, vDone, vFeedback, vSend];
+  function render() {
+    const v = VIEWS[S.screen]();
+    app.innerHTML = header(v) + `<main class="content" id="content">${v.body}</main>` + (v.footer || "");
+  }
+  function go(screen) {
+    S.screen = screen;
+    render();
+    window.scrollTo(0, 0);
+    const h = app.querySelector("h1");
+    if (h) h.focus({ preventScroll: true });
+  }
+
+  // ---------- logging ----------
+  function addLogRow(a) {
+    const c = cur(), o = S.outcome;
+    const n = S.res ? S.res.needs : S.needs;
+    const flight = o.type === "chose" ? S.res.flights.find(x => x.id === o.flightId).flight : "";
+    const d = new Date(), p = x => String(x).padStart(2, "0");
+    const row = {
+      id: newId(), createdAt: d.toISOString(), sync: LIVE.db ? "pending" : "local",
+      timestamp: `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`,
+      tester: S.tester, case_id: c.id, inputs_used: inputsUsed(n), inputs_changed: inputsChanged(n, c.needs),
+      case_result: S.res.result, action: o.type === "chose" ? `chose ${flight}` : "asked for help",
+      expected_behaviour_met: expectedMet(S.res, o), time_on_task_s: S.tta ?? "",
+      q1_understood_reasons: a.q1, q2_info_used_clear: a.q2, q3_next_step_clear: a.q3, q4_confusing: a.q4, q5_improvement: a.q5,
+      case_guide_check: CASE_GUIDE[c.id], sent_to_form: "no", facilitator_note: ""
+    };
+    S.log.push(row);
+    S.lastRow = row;
+    renderLog();
+    pushShared(row);
+  }
+
+  // ---------- events ----------
+  function syncNeedsUI() {
+    const btn = app.querySelector("#showOpts"); if (btn) btn.disabled = !needsValid();
+    const hint = app.querySelector("#arrHint"); if (hint) hint.hidden = S.arrivalMode !== null;
+  }
+  function setParty(v) {
+    const inp = app.querySelector("#party");
+    const val = Math.min(9, Math.max(1, v));
+    S.needs.party = val; if (inp) inp.value = val; syncNeedsUI();
+  }
+
+  app.addEventListener("click", e => {
+    if (e.target.closest("#facBtn")) return openFac();
+    const b = e.target.closest("[data-action]");
+    if (!b) return;
+    const a = b.dataset.action;
+    if (a === "pick") {
+      S.caseId = b.dataset.id; resetNeeds(); S.res = null; S.chosen = null; S.outcome = null;
+      S.t0 = performance.now(); S.tta = null; go(1);
+    } else if (a === "home") go(0);
+    else if (a === "toNotice") go(1);
+    else if (a === "toNeeds") go(2);
+    else if (a === "verify") {
+      S.res = Engine.evaluateCase(cur(), Object.assign({}, S.needs));
+      S.outcome = { type: "help", reason: helpReason(S.res) }; stopTimer(); go(4);
+    } else if (a === "partyDec") setParty((Number.isInteger(S.needs.party) ? S.needs.party : 1) - 1);
+    else if (a === "partyInc") setParty((Number.isInteger(S.needs.party) ? S.needs.party : 0) + 1);
+    else if (a === "resetNeeds") { resetNeeds(); render(); app.querySelector("#party").focus(); }
+    else if (a === "showOptions") {
+      if (!needsValid()) return;
+      S.needs.arrival = S.arrivalMode === "flexible" ? "flexible" : S.arrivalTime;
+      S.res = Engine.evaluateCase(cur(), Object.assign({}, S.needs));
+      if (S.res.result === "ASK_ARRIVAL_PREFERENCE" || S.res.result === "STOP_UNVERIFIED_DISRUPTION") return;
+      S.chosen = null; go(3);
+    } else if (a === "choose") {
+      S.chosen = b.dataset.id; render();
+      const req = app.querySelector('[data-action="request"]'); if (req) req.focus({ preventScroll: true });
+    } else if (a === "request") {
+      S.outcome = { type: "chose", flightId: S.chosen }; stopTimer(); go(4);
+    } else if (a === "help") {
+      S.outcome = { type: "help", reason: helpReason(S.res) }; stopTimer(); go(4);
+    } else if (a === "toFeedback") go(5);
+    else if (a === "saveFeedback" || a === "skipFeedback") {
+      const val = sel => ((app.querySelector(sel) || {}).value || "").trim();
+      addLogRow(a === "skipFeedback" ? { q1: "", q2: "", q3: "", q4: "", q5: "" } : {
+        q1: val('input[name="q1"]:checked'), q2: val('input[name="q2"]:checked'), q3: val('input[name="q3"]:checked'),
+        q4: val("#q4"), q5: val("#q5")
+      });
+      S.sent = false; S.finishArmed = false; S.auto = "sending"; go(6);
+      const row = S.lastRow;
+      autoSend(row).then(() => {
+        S.auto = "sent"; S.sent = true; row.sent_to_form = "yes (auto)";
+        if (LIVE.db) LIVE.db.collection("testlog").doc(row.id).update({ sent_to_form: "yes (auto)" }).catch(() => {});
+        renderLog();
+      }).catch(() => { S.auto = "manual"; }).then(() => { if (S.screen === 6) go(6); });
+    } else if (a === "sendForm") {
+      // Let the link open; only record that it was tapped.
+      S.sent = true; S.finishArmed = false;
+      const r = S.lastRow;
+      if (r && r.sent_to_form !== "yes") {
+        r.sent_to_form = "yes";
+        if (LIVE.db) LIVE.db.collection("testlog").doc(r.id).update({ sent_to_form: "yes" }).catch(() => {});
+        renderLog();
+      }
+      setTimeout(render, 400);
+    } else if (a === "finish") {
+      if (!S.sent && !S.finishArmed) { S.finishArmed = true; const h = app.querySelector("#finishHint"); if (h) h.hidden = false; return; }
+      S.sent = false; S.finishArmed = false; go(0);
+    }
+  });
+
+  const onField = e => {
+    const t = e.target;
+    if (t.id === "tester") S.tester = t.value;
+    else if (t.id === "hideTags") { if (e.type !== "change") return; S.hideTags = t.checked; render(); app.querySelector("#hideTags").focus(); }
+    else if (t.id === "party") { S.needs.party = t.value === "" ? NaN : Number(t.value); syncNeedsUI(); }
+    else if (t.name === "arr") {
+      S.arrivalMode = t.value; syncNeedsUI();
+      if (t.value === "time" && !Engine.isTime(S.arrivalTime) && e.type === "change") app.querySelector("#arrH").focus();
+    } else if (t.id === "arrH" || t.id === "arrM") {
+      const h = app.querySelector("#arrH").value, m = app.querySelector("#arrM").value;
+      S.arrivalTime = h ? `${h}:${m}` : "";
+      if (h) { S.arrivalMode = "time"; const r = app.querySelector('input[name="arr"][value="time"]'); if (r) r.checked = true; }
+      syncNeedsUI();
+    } else if (t.name === "assist") S.needs.assistance = t.value;
+  };
+  app.addEventListener("input", onField);
+  app.addEventListener("change", onField);
+
+  // ---------- shared test log (artifact db: collection "testlog", one document per test run) ----------
+  const LIVE = { db: null, state: "off", rows: null, timer: null, writeFailed: false };
+  const newId = () => "r" + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+  const sharedBody = r => { const b = { createdAt: r.createdAt }; COLS.forEach(k => { b[k] = r[k] ?? ""; }); return b; };
+  const pause = ms => new Promise(res => setTimeout(res, ms));
+  async function pushShared(row) {
+    if (!LIVE.db) return;
+    const ref = LIVE.db.collection("testlog").doc(row.id);
+    try { await ref.set(sharedBody(row)); row.sync = "shared"; }
+    catch (e) {
+      if (e && e.code === "unavailable") {
+        await pause(700 + Math.random() * 900);
+        try { await ref.set(sharedBody(row)); row.sync = "shared"; } catch (e2) { row.sync = "local"; LIVE.writeFailed = true; }
+      } else { row.sync = "local"; LIVE.writeFailed = true; }
+    }
+    renderLog();
+  }
+  const noteQueue = {};
+  function saveNote(id, value) {
+    const shared = LIVE.rows && LIVE.rows.some(r => r._id === id);
+    const local = S.log.find(r => r.id === id); if (local) local.facilitator_note = value;
+    if (!shared || !LIVE.db) return;
+    noteQueue[id] = (noteQueue[id] || Promise.resolve()).then(() =>
+      LIVE.db.collection("testlog").doc(id).update({ facilitator_note: value })
+        .then(() => { facMsg.textContent = "Note saved to the shared log."; })
+        .catch(() => { facMsg.textContent = "That note could not be saved to the shared log. It stays on this device; export as CSV."; }));
+  }
+  function allRows() {
+    if (!LIVE.rows) return S.log;
+    const ids = new Set(LIVE.rows.map(r => r._id));
+    return [...LIVE.rows.map(r => Object.assign({}, r, { id: r._id, sync: "shared" })), ...S.log.filter(r => !ids.has(r.id))];
+  }
+  function renderLiveStatus() {
+    const el = document.getElementById("liveStatus"); if (!el) return;
+    const n = LIVE.rows ? LIVE.rows.length : 0, localOnly = allRows().filter(r => r.sync === "local").length;
+    const msg = {
+      off: ["", "Shared log is not available on this page. Results reach the team Google Sheet; rows listed here stay on this device until reload — export them as CSV if needed."],
+      connecting: ["warn", "Connecting to the shared test log…"],
+      slow: ["warn", "Can't reach the shared test log yet. New rows stay on this device and appear here."],
+      live: ["live", `Live shared log · ${n} ${n === 1 ? "row" : "rows"} from all devices`],
+      error: ["warn", "The shared test log stopped responding. Export your rows as CSV, then reload the page."]
+    }[LIVE.state];
+    el.className = "live-status " + msg[0];
+    el.innerHTML = `<span class="live-dot" aria-hidden="true"></span><span>${msg[1]}${localOnly ? ` · ${localOnly} on this device only` : ""}</span>`;
+  }
+  function startShared() {
+    if (!(window.claude && typeof window.claude.use === "function")) return;
+    LIVE.state = "connecting";
+    window.claude.use("db").then(db => {
+      if (!db) { LIVE.state = "off"; return renderLog(); }
+      LIVE.db = db;
+      LIVE.timer = setTimeout(() => { if (LIVE.state === "connecting") { LIVE.state = "slow"; renderLog(); } }, 10000);
+      db.collection("testlog").orderBy("createdAt", "asc").onSnapshot(snap => {
+        LIVE.rows = snap.docs.map(d => Object.assign({ _id: d.id }, d.data()));
+        if (!snap.metadata.fromCache) { clearTimeout(LIVE.timer); LIVE.state = "live"; }
+        renderLog();
+      }, () => { clearTimeout(LIVE.timer); LIVE.state = "error"; renderLog(); });
+    }).catch(() => { LIVE.state = "off"; renderLog(); });
+  }
+
+  // ---------- facilitator panel ----------
+  const fac = document.getElementById("fac");
+  const facMsg = document.getElementById("facMsg");
+  const COLS = ["timestamp", "tester", "case_id", "inputs_used", "inputs_changed", "case_result", "action", "expected_behaviour_met", "time_on_task_s",
+    "q1_understood_reasons", "q2_info_used_clear", "q3_next_step_clear", "q4_confusing", "q5_improvement", "case_guide_check", "sent_to_form", "facilitator_note"];
+  const toCSV = () => [COLS.join(","), ...allRows().map(r => COLS.map(k => `"${String(r[k] ?? "").replace(/"/g, '""')}"`).join(","))].join("\r\n");
+
+  function renderLog() {
+    const rows = allRows();
+    document.getElementById("logCount").textContent = rows.length;
+    renderLiveStatus();
+    const active = document.activeElement;
+    if (active && active.dataset && active.dataset.note) return; // don't redraw under someone typing a note
+    document.getElementById("logOut").innerHTML = rows.length
+      ? `<table><thead><tr>${COLS.map(c => `<th scope="col">${c}</th>`).join("")}</tr></thead><tbody>${rows.map((r, i) => `<tr>${COLS.map(k =>
+          k === "facilitator_note"
+            ? `<td><input type="text" data-note="${esc(r.id)}" value="${esc(r[k])}" aria-label="Facilitator note for row ${i + 1}"></td>`
+            : k === "timestamp" && r.sync === "local"
+              ? `<td>${esc(r[k])}<br><span class="sync-local">this device only</span></td>`
+              : `<td>${esc(r[k])}</td>`).join("")}</tr>`).join("")}</tbody></table>`
+      : `<p class="muted" style="padding:8px 10px;margin:0">No test runs logged yet. A row is added when a tester finishes or skips the feedback screen.</p>`;
+  }
+  function runSelfCheck() {
+    const rows = Engine.runSelfCheck(DATA), passed = rows.filter(r => r.pass).length;
+    document.getElementById("scOut").innerHTML = `
+      <p class="${passed === rows.length ? "pass-t" : "fail-t"}" role="status">${passed} of ${rows.length} checks passed</p>
+      <div class="tablewrap"><table>
+        <thead><tr><th scope="col">Case (inputs)</th><th scope="col">Expected</th><th scope="col">Actual</th><th scope="col">Result</th></tr></thead>
+        <tbody>${rows.map(r => `<tr><td>${esc(r.label)}</td><td>${esc(r.expected)}</td><td>${esc(r.actual)}</td>
+          <td class="${r.pass ? "pass-t" : "fail-t"}">${r.pass ? "✓ PASS" : "✕ FAIL"}</td></tr>`).join("")}</tbody>
+      </table></div>`;
+  }
+  function showFallback(csv) {
+    document.getElementById("csvFallback").innerHTML =
+      `<label for="csvText" class="muted">Select all and copy this text, then paste it into a spreadsheet:</label><textarea id="csvText" class="csvbox" readonly>${esc(csv)}</textarea>`;
+    const ta = document.getElementById("csvText"); ta.focus(); ta.select();
+  }
+  function openFac() { fac.hidden = false; renderLog(); fac.querySelector('[data-fac="close"]').focus(); }
+  function closeFac() { fac.hidden = true; const b = document.getElementById("facBtn"); if (b) b.focus(); }
+
+  // Hosted viewer: files are offered through the platform's downloads capability; opened as a local file, a normal download is used.
+  let dl = null;
+  try { if (window.claude && typeof window.claude.use === "function") window.claude.use("downloads").then(n => { dl = n; }).catch(() => {}); } catch (e) {}
+
+  fac.addEventListener("change", e => {
+    const id = e.target.dataset && e.target.dataset.note;
+    if (id) saveNote(id, e.target.value);
+  });
+  fac.addEventListener("focusout", e => {
+    if (e.target.dataset && e.target.dataset.note) setTimeout(renderLog, 0);
+  });
+  fac.addEventListener("click", async e => {
+    if (e.target === fac) return closeFac();
+    const b = e.target.closest("[data-fac]"); if (!b) return;
+    const a = b.dataset.fac;
+    const clearBtn = document.getElementById("clearBtn");
+    if (a !== "clear" && S.clearArmed) { S.clearArmed = false; clearBtn.textContent = "Clear log"; }
+    if (a === "close") closeFac();
+    else if (a === "selfcheck") runSelfCheck();
+    else if (a === "csv") {
+      const csv = toCSV();
+      if (dl) {
+        try { await dl.save({ filename: "skyassist_test_log.csv", data: "﻿" + csv }); facMsg.textContent = "CSV saved."; }
+        catch (err) {
+          const code = err && err.code;
+          facMsg.textContent = code === "declined" ? "Download cancelled." : code === "rate_limited" ? "A download prompt is already open. Try again in a moment." : "Download isn't available here. Use Copy CSV instead.";
+        }
+        return;
+      }
+      try {
+        const url = URL.createObjectURL(new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8" }));
+        const link = document.createElement("a");
+        link.href = url; link.download = "skyassist_test_log.csv";
+        document.body.appendChild(link); link.click(); link.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 2000);
+        facMsg.textContent = "CSV download started. If nothing was downloaded, use Copy CSV.";
+      } catch (err) { facMsg.textContent = "Download is blocked here. Copy the text below instead."; showFallback(csv); }
+    } else if (a === "copy") {
+      const csv = toCSV();
+      try { await navigator.clipboard.writeText(csv); facMsg.textContent = `Copied ${allRows().length} rows as CSV. Paste into a spreadsheet.`; }
+      catch (err) { facMsg.textContent = "Clipboard is blocked here. Copy the text below instead."; showFallback(csv); }
+    } else if (a === "clear") {
+      const total = allRows().length;
+      if (!S.clearArmed) { S.clearArmed = true; clearBtn.textContent = LIVE.rows ? `Click again to delete all ${total} rows for everyone` : "Click again to clear all rows"; }
+      else {
+        S.clearArmed = false; clearBtn.textContent = "Clear log";
+        let failed = 0;
+        if (LIVE.db && LIVE.rows) {
+          for (const r of LIVE.rows.slice()) { try { await LIVE.db.collection("testlog").doc(r._id).delete(); } catch (err) { failed++; } }
+        }
+        S.log = []; renderLog(); document.getElementById("csvFallback").innerHTML = "";
+        facMsg.textContent = failed ? `Cleared, but ${failed} shared rows could not be deleted from this device.` : "Log cleared.";
+      }
+    }
+  });
+  document.addEventListener("keydown", e => { if (e.key === "Escape" && !fac.hidden) closeFac(); });
+
+  render();
+  startShared();
+})();
+</script>
+</body>
+</html>
